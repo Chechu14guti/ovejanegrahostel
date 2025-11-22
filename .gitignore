@@ -1,0 +1,14 @@
+# Dependencias
+node_modules
+dist
+
+# Config local / secretos
+.env.local
+.env
+.firebase
+
+# VS Code
+.vscode
+
+# Otros
+.DS_Store
