@@ -1,20 +1,50 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+🏨 Oveja Negra Hostel Manager
 
-# Run and deploy your AI Studio app
+Aplicación web para la gestión interna de reservas y gastos del hostel Oveja Negra (La Carolina, San Luis, Argentina).
 
-This contains everything you need to run your app locally.
+Este proyecto es una herramienta moderna, ligera y pensada para uso interno por parte del equipo del hostel. Permite administrar de forma sencilla:
 
-View your app in AI Studio: https://ai.studio/apps/drive/1b66QHGDAAiyXsJEL6v8x_F2WKp4MBAQN
+✔️ Reservas de habitaciones
 
-## Run Locally
+✔️ Gastos y movimientos
 
-**Prerequisites:**  Node.js
+✔️ Estadísticas básicas
 
+✔️ Login seguro con Firebase Authentication
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+✔️ Almacenamiento en tiempo real con Firestore
+
+🚀 Tecnologías utilizadas
+Área	Tecnología
+Frontend	React + TypeScript
+Build Tool	Vite
+Estilos	TailwindCSS
+Íconos	Lucide Icons
+Backend / BBDD	Firebase Firestore
+Autenticación	Firebase Auth (Email + Password)
+
+🔒 Seguridad
+
+El proyecto utiliza reglas de seguridad en Firestore:
+
+Solo usuarios autenticados pueden leer y escribir.
+
+No se expone ningún dato sensible públicamente.
+
+Se debe revisar periódicamente la configuración de Firebase y mantener las reglas actualizadas.
+
+📌 Notas del proyecto
+
+Este sistema está diseñado para ser simple, rápido y fácil de usar por parte de un pequeño equipo, sin sobrecarga técnica ni dependencias complejas.
+
+Está optimizado para usarlo desde móvil o tablet con conexión limitada.
+
+🤝 Contribuciones
+
+Proyecto privado de uso interno.
+Para mejoras o nuevas funcionalidades, generar una nueva rama y enviar PR.
+
+📄 Licencia
+
+Este proyecto es de uso interno y privado del Hostel Oveja Negra.
+No está permitida su redistribución.
