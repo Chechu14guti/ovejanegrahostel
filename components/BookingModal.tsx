@@ -28,8 +28,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<Partial<Booking>>({
     guestName: '',
-    guestCount: 1,
-    quantity: 1,
+    guestCount: 1 as number | undefined,
+    quantity: 1 as number | undefined,
     guestDoc: '',
     deposit: 0,
     remaining: 0,
@@ -75,7 +75,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       checkIn: formData.checkIn!,
       checkOut: formData.checkOut!,
       guestName: formData.guestName || 'Anónimo',
-      guestCount: Number(formData.guestCount),
+      guestCount: Number(formData.guestCount) || 1,
       quantity: Number(formData.quantity) || 1,
       guestDoc: formData.guestDoc || '',
       deposit: Number(formData.deposit),
@@ -172,8 +172,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <input
                   type="number"
                   min="1"
-                  value={formData.guestCount}
-                  onChange={(e) => setFormData({ ...formData, guestCount: parseInt(e.target.value) || 1 })}
+                  value={formData.guestCount ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData({ ...formData, guestCount: val === '' ? undefined : parseInt(val) });
+                  }}
                   className="w-full p-2 border rounded-lg"
                 />
               </div>
@@ -189,8 +192,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   type="number"
                   min="1"
                   required
-                  value={formData.quantity}
-                  onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+                  value={formData.quantity ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData({ ...formData, quantity: val === '' ? undefined : parseInt(val) });
+                  }}
                   className="w-full p-2 border-2 border-blue-200 rounded-lg bg-blue-50"
                 />
               </div>
