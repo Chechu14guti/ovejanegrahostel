@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-
 import { X, Save, Trash2 } from 'lucide-react';
 import { Room, Booking } from '../types';
 import { format } from 'date-fns';
@@ -234,12 +233,28 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-xs text-red-600 font-bold mb-1">Falta ($)</label>
+                <div className="flex justify-between items-center mb-1 h-5">
+                  {formData.remaining !== 0 && (
+                    <>
+                      <label className="block text-xs text-red-600 font-bold">Falta ($)</label>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, remaining: 0 })}
+                        className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded hover:bg-green-200 font-semibold"
+                      >
+                        Pagado
+                      </button>
+                    </>
+                  )}
+                </div>
                 <input
                   type="number"
                   disabled
-                  value={formData.remaining}
-                  className="w-full p-2 border border-red-200 bg-red-50 rounded text-red-700 font-bold"
+                  value={formData.remaining === 0 ? (formData.total || 0) : formData.remaining}
+                  className={`w-full p-2 border rounded font-bold ${formData.remaining === 0
+                      ? 'border-green-200 bg-green-50 text-green-700'
+                      : 'border-red-200 bg-red-50 text-red-700'
+                    }`}
                 />
               </div>
             </div>
