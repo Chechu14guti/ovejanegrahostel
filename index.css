@@ -1,0 +1,43 @@
+/* Custom Animations */
+
+/* Calendar Day Bubble Hover Effect */
+.calendar-day {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate; /* Creates a new stacking context */
+}
+
+.calendar-day::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%; /* Make it large enough to cover */
+  padding-bottom: 120%; /* Aspect ratio 1:1 */
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 70%, transparent 100%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy effect */
+  z-index: -1;
+  pointer-events: none;
+}
+
+.calendar-day:hover::before {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Modal Slide Up Animation */
+@keyframes slide-up-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

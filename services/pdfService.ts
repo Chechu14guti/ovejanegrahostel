@@ -1,24 +1,31 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Booking } from '../types';
+import { Booking, Expense } from '../types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ROOMS } from '../constants';
 
-export const generateMonthlyReport = (bookings: Booking[], date: Date) => {
+export const generateMonthlyReport = (
+  bookings: Booking[],
+  expenses: Expense[],
+  date: Date
+) => {
   const doc = new jsPDF();
-  
+
   const monthName = format(date, 'MMMM yyyy', { locale: es }).toUpperCase();
-  
+
+  // Título
   doc.setFontSize(18);
   doc.text(`Reporte de Facturación - ${monthName}`, 14, 22);
-  
+
+  // Fecha de generación
   doc.setFontSize(11);
   doc.setTextColor(100);
   doc.text(`Generado el: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 30);
 
-  const tableData = bookings.map(b => {
-    const roomName = ROOMS.find(r => r.id === b.roomId)?.name || 'Desconocido';
+  // ------------------ TABLA RESERVAS ------------------
+  const bookingsTableData = bookings.map((b) => {
+    const roomName = ROOMS.find((r) => r.id === b.roomId)?.name || 'Desconocido';
     return [
       format(new Date(b.checkIn), 'dd/MM'),
       format(new Date(b.checkOut), 'dd/MM'),
@@ -27,42 +34,82 @@ export const generateMonthlyReport = (bookings: Booking[], date: Date) => {
       `$${b.total}`,
       `$${b.deposit}`,
       `$${b.remaining}`,
-      b.remaining === 0 ? 'PAGADO' : 'PENDIENTE'
+      b.remaining === 0 ? 'PAGADO' : 'PENDIENTE',
     ];
   });
 
   const totalIncome = bookings.reduce((sum, b) => sum + b.total, 0);
   const totalDeposited = bookings.reduce((sum, b) => sum + b.deposit, 0);
   const totalPending = bookings.reduce((sum, b) => sum + b.remaining, 0);
+  const totalCollected = totalIncome - totalPending; // lo realmente cobrado
 
-  // Fix for ESM import quirks: sometimes default export is nested or attached to the function
+  // Fix for ESM import quirks
   // @ts-ignore
   const applyAutoTable = autoTable.default || autoTable;
 
   if (typeof applyAutoTable === 'function') {
     applyAutoTable(doc, {
-        head: [['Entrada', 'Salida', 'Habitación', 'Huésped', 'Total', 'Seña', 'Falta', 'Estado']],
-        body: tableData,
-        startY: 40,
-        theme: 'grid',
-        headStyles: { fillColor: [41, 128, 185] },
-        styles: { fontSize: 9 },
+      head: [
+        [
+          'Entrada',
+          'Salida',
+          'Habitación',
+          'Huésped',
+          'Total',
+          'Seña',
+          'Falta',
+          'Estado',
+        ],
+      ],
+      body: bookingsTableData,
+      startY: 40,
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185] },
+      styles: { fontSize: 9 },
     });
   } else {
-      console.error("Could not load autoTable plugin", autoTable);
+    console.error('Could not load autoTable plugin', autoTable);
   }
 
   // @ts-ignore
-  const finalY = (doc as any).lastAutoTable?.finalY || 150;
+  let lastY = (doc as any).lastAutoTable?.finalY || 40;
+
+  // ------------------ TABLA GASTOS / COMPRAS ------------------
+  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+  if (expenses.length > 0 && typeof applyAutoTable === 'function') {
+    const expensesTableData = expenses.map((e) => [
+      format(new Date(e.date), 'dd/MM'),
+      e.description,
+      `$${e.amount}`,
+    ]);
+
+    applyAutoTable(doc, {
+      head: [['Fecha', 'Concepto', 'Monto']],
+      body: expensesTableData,
+      startY: lastY + 15,
+      theme: 'grid',
+      headStyles: { fillColor: [231, 76, 60] }, // rojo suave para gastos
+      styles: { fontSize: 9 },
+    });
+
+    // @ts-ignore
+    lastY = (doc as any).lastAutoTable?.finalY || lastY + 15;
+  }
+
+  // ------------------ RESUMEN DEL MES ------------------
+  const realProfit = totalIncome - totalExpenses;
 
   doc.setFontSize(12);
   doc.setTextColor(0);
-  doc.text('Resumen del Mes:', 14, finalY + 15);
+  doc.text('Resumen del Mes:', 14, lastY + 15);
+
   doc.setFontSize(10);
-  doc.text(`Total Facturado: $${totalIncome}`, 14, finalY + 22);
-  doc.text(`Total Cobrado (Señas + Pagos): $${totalDeposited + (totalIncome - totalPending - totalDeposited)}`, 14, finalY + 27); 
-  
-  doc.text(`Total Pendiente de Cobro: $${totalPending}`, 14, finalY + 32);
+  doc.text(`Total Facturado (Reservas): $${totalIncome}`, 14, lastY + 22);
+  doc.text(`Total Gastos / Compras: $${totalExpenses}`, 14, lastY + 27);
+  doc.text(`Beneficio Real (Ingresos - Gastos): $${realProfit}`, 14, lastY + 32);
+  doc.text(`Total Cobrado (Señas + Pagos): $${totalCollected}`, 14, lastY + 37);
+  doc.text(`Total Pendiente de Cobro: $${totalPending}`, 14, lastY + 42);
 
   doc.save(`reporte-hostel-${format(date, 'MM-yyyy')}.pdf`);
 };

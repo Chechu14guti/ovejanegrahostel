@@ -217,7 +217,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                       key={day.toISOString()}
                       onClick={() => handleDateClick(day)}
                       className={`
-                        relative flex flex-col items-start justify-start p-2 rounded-xl border transition hover:shadow-md min-h-[90px] sm:min-h-[130px]
+                        calendar-day relative flex flex-col items-start justify-start p-2 rounded-xl border transition hover:shadow-md min-h-[90px] sm:min-h-[130px]
                         ${!isSameMonth(day, currentDate) && viewMode === 'month' ? 'opacity-40 bg-gray-50' : 'bg-white'}
                         ${isToday(day) ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'}
                       `}
