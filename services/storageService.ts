@@ -1,5 +1,5 @@
 // services/storageService.ts
-import { Booking, Expense } from "../types";
+import { Booking, Expense, SenderoRecord } from "../types";
 import { db } from "../firebase";
 import {
   collection,
@@ -11,9 +11,11 @@ import {
 
 const BOOKING_KEY = "hostel_bookings_v1";
 const EXPENSE_KEY = "hostel_expenses_v1";
+const SENDERO_KEY = "hostel_sendero_v1";
 
 const BOOKINGS_COLLECTION = "bookings";
 const EXPENSES_COLLECTION = "expenses";
+const SENDERO_COLLECTION = "sendero";
 
 // ----------------- Helpers de localStorage -----------------
 
@@ -52,6 +54,11 @@ export const syncFromFirestore = async (): Promise<void> => {
     const expensesSnap = await getDocs(collection(db, EXPENSES_COLLECTION));
     const expenses: Expense[] = expensesSnap.docs.map((d) => d.data() as Expense);
     saveLocalArray<Expense>(EXPENSE_KEY, expenses);
+
+    // Sendero
+    const senderoSnap = await getDocs(collection(db, SENDERO_COLLECTION));
+    const senderoRecords: SenderoRecord[] = senderoSnap.docs.map((d) => d.data() as SenderoRecord);
+    saveLocalArray<SenderoRecord>(SENDERO_KEY, senderoRecords);
 
     console.log("Sync desde Firestore completado");
   } catch (e) {
@@ -122,5 +129,32 @@ export const deleteExpense = (id: string): void => {
   // Borrar en Firestore
   deleteDoc(doc(db, EXPENSES_COLLECTION, id)).catch((e) =>
     console.error("Error borrando expense en Firestore", e)
+  );
+};
+
+// ----------------- SENDERO -----------------
+
+export const getSenderoRecords = (): SenderoRecord[] => {
+  return loadLocalArray<SenderoRecord>(SENDERO_KEY);
+};
+
+export const saveSenderoRecord = (record: SenderoRecord): void => {
+  const records = getSenderoRecords();
+  records.push(record);
+  saveLocalArray<SenderoRecord>(SENDERO_KEY, records);
+
+  // Guardar también en Firestore
+  setDoc(doc(db, SENDERO_COLLECTION, record.id), record).catch((e) =>
+    console.error("Error guardando sendero record en Firestore", e)
+  );
+};
+
+export const deleteSenderoRecord = (id: string): void => {
+  const records = getSenderoRecords().filter((r) => r.id !== id);
+  saveLocalArray<SenderoRecord>(SENDERO_KEY, records);
+
+  // Borrar en Firestore
+  deleteDoc(doc(db, SENDERO_COLLECTION, id)).catch((e) =>
+    console.error("Error borrando sendero record en Firestore", e)
   );
 };

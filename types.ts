@@ -29,6 +29,16 @@ export interface Expense {
   createdAt: number;
 }
 
+export interface SenderoRecord {
+  id: string;
+  empleado: string;           // Employee name
+  cantidadPersonas: number;   // Number of people
+  precioPorPersona: number;   // Price per person
+  horas: number;              // Hours worked
+  fecha: string;              // Date (YYYY-MM-DD)
+  createdAt: number;
+}
+
 export interface DailyStatus {
   date: Date;
   isToday: boolean;

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { format, addMonths, subMonths, endOfMonth, endOfWeek, eachDayOfInterval, isSameMonth, isToday, addWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, DollarSign, LogOut, Tent, Bike, BedDouble, Home, ShoppingCart, BarChart3, Moon, Sun } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, DollarSign, LogOut, Tent, Bike, BedDouble, Home, ShoppingCart, BarChart3, Moon, Sun, Footprints } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { ROOMS } from '../constants';
-import { Booking, Room, Expense } from '../types';
+import { Booking, Room, Expense, SenderoRecord } from '../types';
 import {
   getBookings,
   saveBooking,
@@ -13,6 +13,9 @@ import {
   getExpenses,
   saveExpense,
   deleteExpense,
+  getSenderoRecords,
+  saveSenderoRecord,
+  deleteSenderoRecord,
   syncFromFirestore,
 } from "../services/storageService";
 
@@ -22,6 +25,7 @@ import { BookingModal } from './BookingModal';
 import { FinanceView } from './FinanceView';
 import { ExpensesView } from './ExpensesView';
 import { StatsView } from './StatsView';
+import { SenderoView } from './SenderoView';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -62,7 +66,7 @@ const parseLocalISO = (s: string) => {
   return new Date(y, m - 1, d);
 };
 
-type ViewType = 'calendar' | 'finance' | 'expenses' | 'stats';
+type ViewType = 'calendar' | 'finance' | 'expenses' | 'stats' | 'sendero';
 
 export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const { theme, toggleTheme } = useTheme();
@@ -70,6 +74,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [senderoRecords, setSenderoRecords] = useState<SenderoRecord[]>([]);
   const [activeView, setActiveView] = useState<ViewType>('calendar');
 
   // Modal States
@@ -87,6 +92,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       // 2) Cargamos desde localStorage a estado de React
       setBookings(getBookings());
       setExpenses(getExpenses());
+      setSenderoRecords(getSenderoRecords());
     };
 
     loadData();
@@ -96,6 +102,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const refreshData = () => {
     setBookings(getBookings());
     setExpenses(getExpenses());
+    setSenderoRecords(getSenderoRecords());
   };
 
   // Calendar Navigation
@@ -139,6 +146,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     setIsBookingModalOpen(false);
   };
 
+  const handleSenderoAdd = (record: SenderoRecord) => {
+    saveSenderoRecord(record);
+    refreshData();
+  };
+
+  const handleSenderoDelete = (id: string) => {
+    deleteSenderoRecord(id);
+    refreshData();
+  };
+
   // Helper to check if a room is occupied on a date
   const checkRoomOccupancy = (date: Date, roomId: string) => {
     const dayStart = getStartOfDay(date);
@@ -154,11 +171,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const renderContent = () => {
     switch (activeView) {
       case 'finance':
-        return <FinanceView bookings={bookings} expenses={expenses} />;
+        return <FinanceView bookings={bookings} expenses={expenses} senderoRecords={senderoRecords} />;
       case 'expenses':
         return <ExpensesView expenses={expenses} onUpdate={refreshData} />;
       case 'stats':
         return <StatsView bookings={bookings} expenses={expenses} />;
+      case 'sendero':
+        return <SenderoView records={senderoRecords} onAddRecord={handleSenderoAdd} onDeleteRecord={handleSenderoDelete} />;
       default:
         return (
           <>
@@ -286,6 +305,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </button>
 
           <button
+            onClick={() => setActiveView('sendero')}
+            className={`p-2 rounded-lg flex items-center gap-2 transition ${activeView === 'sendero'
+              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+          >
+            <Footprints className="w-5 h-5" />
+            <span className="text-sm font-medium">Sendero</span>
+          </button>
+
+          <button
             onClick={() => setActiveView('expenses')}
             className={`p-2 rounded-lg flex items-center gap-2 transition ${activeView === 'expenses'
               ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
@@ -304,7 +334,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               }`}
           >
             <DollarSign className="w-5 h-5" />
-            <span className="text-sm font-medium">Finanzas</span>
+            <span className="text-sm font-medium">Facturación</span>
           </button>
 
           <button
@@ -396,6 +426,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </button>
 
           <button
+            onClick={() => setActiveView('sendero')}
+            className={`flex flex-col items-center gap-1 p-2 rounded-lg transition ${activeView === 'sendero'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 dark:text-gray-400'
+              }`}
+          >
+            <Footprints className="w-6 h-6" />
+            <span className="text-xs font-medium">Sendero</span>
+          </button>
+
+          <button
             onClick={() => setActiveView('expenses')}
             className={`flex flex-col items-center gap-1 p-2 rounded-lg transition ${activeView === 'expenses'
               ? 'text-blue-600 dark:text-blue-400'
@@ -414,7 +455,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               }`}
           >
             <DollarSign className="w-6 h-6" />
-            <span className="text-xs font-medium">Finanzas</span>
+            <span className="text-xs font-medium">Facturación</span>
           </button>
 
           <button
