@@ -19,15 +19,15 @@ const getStartOfMonth = (d: Date) => {
 };
 
 const parseLocalISO = (s: string) => {
-    const [y, m, d] = s.split('-').map(Number);
-    return new Date(y, m - 1, d);
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
 };
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
+
   // Form State
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -58,140 +58,140 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
 
     saveExpense(newExpense);
     onUpdate();
-    
+
     // Reset form but keep date
     setDescription('');
     setAmount('');
   };
 
   const handleDelete = (id: string) => {
-    if(confirm('¿Eliminar este gasto?')) {
-        deleteExpense(id);
-        onUpdate();
+    if (confirm('¿Eliminar este gasto?')) {
+      deleteExpense(id);
+      onUpdate();
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 w-full">
-      
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 w-full pb-20 md:pb-6">
+
       {/* Header with Date Navigation */}
-      <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm mb-6 gap-4">
-        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <ShoppingCart className="text-orange-500" />
-            Control de Compras
+      <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm mb-6 gap-4 transition-colors duration-200">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+          <ShoppingCart className="text-orange-500" />
+          Control de Compras
         </h2>
         <div className="flex items-center gap-4">
-          <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 hover:bg-gray-100 rounded-full">
+          <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="text-lg font-medium capitalize w-40 text-center">
+          <span className="text-lg font-medium capitalize w-40 text-center text-gray-900 dark:text-white">
             {format(currentMonth, 'MMMM yyyy', { locale: es })}
           </span>
-          <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 hover:bg-gray-100 rounded-full">
+          <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300">
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Form Section */}
-        <div className="bg-white p-6 rounded-xl shadow-sm h-fit">
-            <h3 className="font-bold text-gray-700 mb-4 border-b pb-2">Nueva Compra</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Fecha</label>
-                    <input 
-                        type="date" 
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
-                        required
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Producto / Concepto</label>
-                    <input 
-                        type="text" 
-                        placeholder="Ej. Productos de limpieza"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
-                        required
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Costo ($)</label>
-                    <input 
-                        type="number" 
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none font-bold text-gray-800"
-                        required
-                    />
-                </div>
-                <button 
-                    type="submit"
-                    className="w-full bg-orange-500 text-white py-2 rounded-lg font-semibold hover:bg-orange-600 transition flex items-center justify-center gap-2"
-                >
-                    <Plus className="w-4 h-4" /> Agregar Gasto
-                </button>
-            </form>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm h-fit transition-colors duration-200">
+          <h3 className="font-bold text-gray-700 dark:text-gray-200 mb-4 border-b dark:border-gray-700 pb-2">Nueva Compra</h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Fecha</label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full p-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Producto / Concepto</label>
+              <input
+                type="text"
+                placeholder="Ej. Productos de limpieza"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full p-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Costo ($)</label>
+              <input
+                type="number"
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-full p-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none font-bold text-gray-800 dark:text-white bg-white dark:bg-gray-700"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-orange-500 text-white py-2 rounded-lg font-semibold hover:bg-orange-600 transition flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Agregar Gasto
+            </button>
+          </form>
         </div>
 
         {/* List Section */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
-            <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
-                <span className="font-semibold text-gray-600">Historial del Mes</span>
-                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold">
-                    Total: ${totalMonthly.toLocaleString()}
-                </span>
-            </div>
-            
-            <div className="overflow-y-auto max-h-[500px] p-0">
-                {monthlyExpenses.length === 0 ? (
-                    <div className="p-8 text-center text-gray-400">
-                        No hay compras registradas este mes.
-                    </div>
-                ) : (
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-gray-500 uppercase bg-gray-50 sticky top-0">
-                            <tr>
-                                <th className="px-4 py-3">Fecha</th>
-                                <th className="px-4 py-3">Concepto</th>
-                                <th className="px-4 py-3 text-right">Monto</th>
-                                <th className="px-4 py-3 text-center">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {monthlyExpenses.map(expense => (
-                                <tr key={expense.id} className="border-b hover:bg-gray-50">
-                                    <td className="px-4 py-3 whitespace-nowrap text-gray-500">
-                                        {format(parseLocalISO(expense.date), 'dd/MM')}
-                                    </td>
-                                    <td className="px-4 py-3 font-medium text-gray-800">
-                                        {expense.description}
-                                    </td>
-                                    <td className="px-4 py-3 text-right font-bold text-gray-700">
-                                        ${expense.amount.toLocaleString()}
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                        <button 
-                                            onClick={() => handleDelete(expense.id)}
-                                            className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden flex flex-col transition-colors duration-200">
+          <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-b dark:border-gray-700 flex justify-between items-center">
+            <span className="font-semibold text-gray-600 dark:text-gray-300">Historial del Mes</span>
+            <span className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-3 py-1 rounded-full text-sm font-bold">
+              Total: ${totalMonthly.toLocaleString()}
+            </span>
+          </div>
+
+          <div className="overflow-y-auto max-h-[500px] p-0">
+            {monthlyExpenses.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 dark:text-gray-500">
+                No hay compras registradas este mes.
+              </div>
+            ) : (
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/50 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3">Fecha</th>
+                    <th className="px-4 py-3">Concepto</th>
+                    <th className="px-4 py-3 text-right">Monto</th>
+                    <th className="px-4 py-3 text-center">Acción</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {monthlyExpenses.map(expense => (
+                    <tr key={expense.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">
+                        {format(parseLocalISO(expense.date), 'dd/MM')}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">
+                        {expense.description}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-gray-700 dark:text-gray-300">
+                        ${expense.amount.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => handleDelete(expense.id)}
+                          className="text-red-400 hover:text-red-600 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
     </div>

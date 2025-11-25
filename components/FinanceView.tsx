@@ -70,22 +70,22 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ bookings, expenses }) 
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 w-full">
+    <div className="max-w-6xl mx-auto p-4 sm:p-6 w-full pb-20 md:pb-6">
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm mb-6 transition-colors duration-200">
         <div className="flex items-center gap-4 mb-4 sm:mb-0">
           <button
             onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            className="p-2 hover:bg-gray-100 rounded-full"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h2 className="text-xl font-bold text-gray-800 capitalize w-48 text-center">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white capitalize w-48 text-center">
             {format(currentMonth, 'MMMM yyyy', { locale: es })}
           </h2>
           <button
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="p-2 hover:bg-gray-100 rounded-full"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -102,65 +102,63 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ bookings, expenses }) 
 
       {/* Stats Cards - Real Billing */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white p-5 rounded-xl shadow-sm border-t-4 border-blue-500">
-          <div className="flex items-center gap-2 text-gray-500 mb-1">
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border-t-4 border-blue-500 transition-colors duration-200">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
             <TrendingUp className="w-4 h-4" />
             <span className="text-sm font-medium">Ingresos Reservas</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">
             ${stats.income.toLocaleString()}
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow-sm border-t-4 border-orange-500">
-          <div className="flex items-center gap-2 text-gray-500 mb-1">
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border-t-4 border-orange-500 transition-colors duration-200">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
             <ArrowDownCircle className="w-4 h-4" />
             <span className="text-sm font-medium">Gastos / Compras</span>
           </div>
-          <p className="text-2xl font-bold text-orange-600">
+          <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
             -${stats.totalExpenses.toLocaleString()}
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow-sm border-t-4 border-green-500 relative overflow-hidden">
-          <div className="flex items-center gap-2 text-gray-500 mb-1 relative z-10">
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border-t-4 border-green-500 relative overflow-hidden transition-colors duration-200">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1 relative z-10">
             <Wallet className="w-4 h-4" />
             <span className="text-sm font-medium">Beneficio Real</span>
           </div>
           <p
-            className={`text-2xl font-bold relative z-10 ${
-              stats.netProfit >= 0 ? 'text-green-700' : 'text-red-600'
-            }`}
+            className={`text-2xl font-bold relative z-10 ${stats.netProfit >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+              }`}
           >
             ${stats.netProfit.toLocaleString()}
           </p>
           {/* Visual flourish */}
           <div
-            className={`absolute right-[-10px] bottom-[-10px] w-20 h-20 rounded-full opacity-10 ${
-              stats.netProfit >= 0 ? 'bg-green-500' : 'bg-red-500'
-            }`}
+            className={`absolute right-[-10px] bottom-[-10px] w-20 h-20 rounded-full opacity-10 ${stats.netProfit >= 0 ? 'bg-green-500' : 'bg-red-500'
+              }`}
           ></div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow-sm border-t-4 border-red-500">
-          <div className="flex items-center gap-2 text-gray-500 mb-1">
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border-t-4 border-red-500 transition-colors duration-200">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
             <AlertCircle className="w-4 h-4" />
             <span className="text-sm font-medium">Pendiente Cobro</span>
           </div>
-          <p className="text-2xl font-bold text-red-600">
+          <p className="text-2xl font-bold text-red-600 dark:text-red-400">
             ${stats.pending.toLocaleString()}
           </p>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b bg-gray-50">
-          <h3 className="font-bold text-gray-700">Detalle de Reservas</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden transition-colors duration-200">
+        <div className="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+          <h3 className="font-bold text-gray-700 dark:text-gray-200">Detalle de Reservas</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-gray-600">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+          <table className="w-full text-sm text-left text-gray-600 dark:text-gray-300">
+            <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700/50">
               <tr>
                 <th className="px-6 py-3">Fecha</th>
                 <th className="px-6 py-3">Habitación</th>
@@ -175,47 +173,45 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ bookings, expenses }) 
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-6 py-8 text-center text-gray-400"
+                    className="px-6 py-8 text-center text-gray-400 dark:text-gray-500"
                   >
                     No hay reservas este mes
                   </td>
                 </tr>
               ) : (
                 monthlyBookings.map((b) => (
-                  <tr key={b.id} className="border-b hover:bg-gray-50">
+                  <tr key={b.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-6 py-4 font-medium">
                       {format(parseLocalISO(b.checkIn), 'dd/MM')} -{' '}
                       {format(parseLocalISO(b.checkOut), 'dd/MM')}
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`px-2 py-1 rounded text-xs font-bold ${
-                          ROOMS.find((r) => r.id === b.roomId)?.color
-                        }`}
+                        className={`px-2 py-1 rounded text-xs font-bold ${ROOMS.find((r) => r.id === b.roomId)?.color
+                          }`}
                       >
                         {ROOMS.find((r) => r.id === b.roomId)?.name}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-900">
+                    <td className="px-6 py-4 text-gray-900 dark:text-white">
                       {b.guestName}
                     </td>
                     <td className="px-6 py-4 text-right font-bold">
                       ${b.total}
                     </td>
                     <td
-                      className={`px-6 py-4 text-right font-bold ${
-                        b.remaining > 0 ? 'text-red-600' : 'text-gray-400'
-                      }`}
+                      className={`px-6 py-4 text-right font-bold ${b.remaining > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'
+                        }`}
                     >
                       ${b.remaining}
                     </td>
                     <td className="px-6 py-4 text-center">
                       {b.remaining === 0 ? (
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-bold">
+                        <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded-full text-xs font-bold">
                           Pagado
                         </span>
                       ) : (
-                        <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-bold">
+                        <span className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-2 py-1 rounded-full text-xs font-bold">
                           Debe
                         </span>
                       )}

@@ -30,18 +30,20 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6">Acceso Hostel</h2>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center px-4 transition-colors duration-200">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-white">Acceso Hostel</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email
             </label>
             <input
               type="email"
-              className="w-full px-4 py-2 border rounded-lg bg-gray-900 text-white"
+              required
+              className="w-full px-4 py-3 border dark:border-gray-600 rounded-lg bg-gray-900 dark:bg-gray-700 text-white text-base"
+              style={{ fontSize: '16px' }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="username"
@@ -49,12 +51,14 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Contraseña
             </label>
             <input
               type="password"
-              className="w-full px-4 py-2 border rounded-lg bg-gray-900 text-white"
+              required
+              className="w-full px-4 py-3 border dark:border-gray-600 rounded-lg bg-gray-900 dark:bg-gray-700 text-white text-base"
+              style={{ fontSize: '16px' }}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
@@ -67,10 +71,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-60"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-base"
           >
-            {loading ? "Entrando..." : "Entrar"}
+            Iniciar Sesión
           </button>
         </form>
       </div>

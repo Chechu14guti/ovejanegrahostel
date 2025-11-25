@@ -4,6 +4,7 @@ import { Login } from "./components/Login";
 import { Dashboard } from "./components/Dashboard";
 import { auth } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import { ThemeProvider } from "./context/ThemeContext";
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -40,13 +41,15 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="font-sans text-gray-900">
-      {isAuthenticated ? (
-        <Dashboard onLogout={handleLogout} />
-      ) : (
-        <Login onLogin={handleLogin} />
-      )}
-    </div>
+    <ThemeProvider>
+      <div className="font-sans text-gray-900 dark:text-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+        {isAuthenticated ? (
+          <Dashboard onLogout={handleLogout} />
+        ) : (
+          <Login onLogin={handleLogin} />
+        )}
+      </div>
+    </ThemeProvider>
   );
 };
 
