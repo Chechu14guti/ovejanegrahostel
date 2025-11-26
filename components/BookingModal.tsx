@@ -100,18 +100,18 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4">
-      <div className="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+      <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto animate-slide-up transition-colors duration-200">
 
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-6 py-4 flex justify-between items-center z-10 transition-colors duration-200">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
               {existingBooking ? 'Editar Reserva' : 'Nueva Reserva'}
             </h3>
-            <p className="text-sm text-gray-500">{selectedRoom.name}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{selectedRoom.name}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-            <X className="w-5 h-5 text-gray-500" />
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
@@ -121,24 +121,24 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Entrada (Check-in)</label>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Entrada (Check-in)</label>
               <input
                 type="date"
                 required
                 value={formData.checkIn}
                 onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Salida (Check-out)</label>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Salida (Check-out)</label>
               <input
                 type="date"
                 required
                 value={formData.checkOut}
                 min={formData.checkIn}
                 onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
               />
             </div>
           </div>
@@ -146,28 +146,28 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           {/* Guest Info */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Huésped Principal</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Huésped Principal</label>
               <input
                 type="text"
                 placeholder="Nombre completo"
                 value={formData.guestName}
                 onChange={(e) => setFormData({ ...formData, guestName: e.target.value })}
-                className="w-full p-2 border rounded-lg"
+                className="w-full p-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-colors"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">DNI / Pasaporte</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">DNI / Pasaporte</label>
                 <input
                   type="text"
                   placeholder="Opcional"
                   value={formData.guestDoc}
                   onChange={(e) => setFormData({ ...formData, guestDoc: e.target.value })}
-                  className="w-full p-2 border rounded-lg"
+                  className="w-full p-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad Personas</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cantidad Personas</label>
                 <input
                   type="number"
                   min="1"
@@ -176,7 +176,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     const val = e.target.value;
                     setFormData({ ...formData, guestCount: val === '' ? undefined : parseInt(val) });
                   }}
-                  className="w-full p-2 border rounded-lg"
+                  className="w-full p-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
                 />
               </div>
             </div>
@@ -184,7 +184,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             {/* Extra field for Camping types */}
             {isCamping && (
               <div>
-                <label className="block text-sm font-bold text-blue-800 mb-1">
+                <label className="block text-sm font-bold text-blue-800 dark:text-blue-400 mb-1">
                   {selectedRoom.type === 'tent' ? 'Cantidad de Carpas' : 'Cantidad de Motorhomes'}
                 </label>
                 <input
@@ -196,39 +196,39 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     const val = e.target.value;
                     setFormData({ ...formData, quantity: val === '' ? undefined : parseInt(val) });
                   }}
-                  className="w-full p-2 border-2 border-blue-200 rounded-lg bg-blue-50"
+                  className="w-full p-2 border-2 border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-gray-900 dark:text-white transition-colors"
                 />
               </div>
             )}
           </div>
 
           {/* Financials */}
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
-            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+          <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600 space-y-4 transition-colors">
+            <h4 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               Detalles de Pago
             </h4>
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Total ($)</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Total ($)</label>
                 <input
                   type="number"
                   required
                   min="0"
                   value={formData.total || ''}
                   onChange={(e) => handleTotalChange(parseInt(e.target.value) || 0)}
-                  className="w-full p-2 border border-gray-300 rounded bg-white font-bold text-gray-900"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 font-bold text-gray-900 dark:text-white transition-colors"
                   placeholder="0"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Seña ($)</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Seña ($)</label>
                 <input
                   type="number"
                   min="0"
                   value={formData.deposit || ''}
                   onChange={(e) => handleDepositChange(parseInt(e.target.value) || 0)}
-                  className="w-full p-2 border border-gray-300 rounded bg-white"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
                   placeholder="0"
                 />
               </div>
@@ -236,11 +236,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <div className="flex justify-between items-center mb-1 h-5">
                   {formData.remaining !== 0 && (
                     <>
-                      <label className="block text-xs text-red-600 font-bold">Falta ($)</label>
+                      <label className="block text-xs text-red-600 dark:text-red-400 font-bold">Falta ($)</label>
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, remaining: 0 })}
-                        className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded hover:bg-green-200 font-semibold"
+                        className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded hover:bg-green-200 dark:hover:bg-green-900/50 font-semibold transition-colors"
                       >
                         Pagado
                       </button>
@@ -251,9 +251,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   type="number"
                   disabled
                   value={formData.remaining === 0 ? (formData.total || 0) : formData.remaining}
-                  className={`w-full p-2 border rounded font-bold ${formData.remaining === 0
-                      ? 'border-green-200 bg-green-50 text-green-700'
-                      : 'border-red-200 bg-red-50 text-red-700'
+                  className={`w-full p-2 border rounded font-bold transition-colors ${formData.remaining === 0
+                    ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                    : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
                     }`}
                 />
               </div>
@@ -262,12 +262,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notas</label>
             <textarea
               rows={2}
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full p-2 border rounded-lg resize-none"
+              className="w-full p-2 border dark:border-gray-600 rounded-lg resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-colors"
               placeholder="Detalles adicionales..."
             />
           </div>
@@ -282,14 +282,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     onDelete(existingBooking.id);
                   }
                 }}
-                className="flex-1 bg-red-100 text-red-700 py-3 rounded-lg font-semibold hover:bg-red-200 flex items-center justify-center gap-2"
+                className="flex-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 py-3 rounded-lg font-semibold hover:bg-red-200 dark:hover:bg-red-900/50 flex items-center justify-center gap-2 transition-colors"
               >
                 <Trash2 className="w-4 h-4" /> Eliminar
               </button>
             )}
             <button
               type="submit"
-              className={`flex-[2] py-3 rounded-lg font-semibold text-white flex items-center justify-center gap-2 ${existingBooking ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
+              className={`flex-[2] py-3 rounded-lg font-semibold text-white flex items-center justify-center gap-2 transition-colors ${existingBooking ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600' : 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600'}`}
             >
               <Save className="w-4 h-4" /> {existingBooking ? 'Guardar Cambios' : 'Crear Reserva'}
             </button>
