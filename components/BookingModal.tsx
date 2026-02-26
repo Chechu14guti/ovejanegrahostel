@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Trash2 } from 'lucide-react';
 import { Room, Booking } from '../types';
 import { format } from 'date-fns';
+import { ConfirmModal } from './ConfirmModal';
 
 // Creating a simple ID generator since we can't easily import uuid in this specific constraints setup without import map complexity for uuid
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -37,6 +38,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     checkIn: format(selectedDate, 'yyyy-MM-dd'),
     checkOut: format(selectedDate, 'yyyy-MM-dd'),
   });
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -275,17 +278,27 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           {/* Actions */}
           <div className="flex gap-3 pt-2">
             {existingBooking && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirm('¿Estás seguro de eliminar esta reserva?')) {
+              <>
+                <ConfirmModal
+                  isOpen={deleteConfirmOpen}
+                  title="Eliminar reserva"
+                  message="¿Estás seguro de eliminar esta reserva?"
+                  messageSecondary="Esta acción no se puede deshacer."
+                  confirmText="Eliminar"
+                  onConfirm={() => {
                     onDelete(existingBooking.id);
-                  }
-                }}
-                className="flex-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 py-3 rounded-lg font-semibold hover:bg-red-200 dark:hover:bg-red-900/50 flex items-center justify-center gap-2 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" /> Eliminar
-              </button>
+                    setDeleteConfirmOpen(false);
+                  }}
+                  onCancel={() => setDeleteConfirmOpen(false)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  className="flex-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 py-3 rounded-lg font-semibold hover:bg-red-200 dark:hover:bg-red-900/50 flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" /> Eliminar
+                </button>
+              </>
             )}
             <button
               type="submit"

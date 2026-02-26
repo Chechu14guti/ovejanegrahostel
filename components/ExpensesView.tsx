@@ -4,6 +4,7 @@ import { saveExpense, deleteExpense } from '../services/storageService';
 import { format, endOfMonth, isWithinInterval, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, Trash2, ShoppingCart } from 'lucide-react';
+import { ConfirmModal } from './ConfirmModal';
 
 interface ExpensesViewProps {
   expenses: Expense[];
@@ -32,6 +33,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const monthlyExpenses = useMemo(() => {
     const start = getStartOfMonth(currentMonth);
@@ -64,15 +66,28 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
     setAmount('');
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('¿Eliminar este gasto?')) {
-      deleteExpense(id);
+  const handleDeleteSubmit = () => {
+    if (deleteConfirmId) {
+      deleteExpense(deleteConfirmId);
       onUpdate();
+      setDeleteConfirmId(null);
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 w-full pb-20 md:pb-6">
+
+      {deleteConfirmId && (
+        <ConfirmModal
+          isOpen={!!deleteConfirmId}
+          title="Eliminar gasto"
+          message="¿Seguro que quieres eliminar este gasto?"
+          messageSecondary="Esta acción no se puede deshacer."
+          confirmText="Eliminar"
+          onConfirm={handleDeleteSubmit}
+          onCancel={() => setDeleteConfirmId(null)}
+        />
+      )}
 
       {/* Header with Date Navigation */}
       <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm mb-6 gap-4 transition-colors duration-200">
@@ -180,7 +195,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
                       </td>
                       <td className="px-4 py-3 text-center">
                         <button
-                          onClick={() => handleDelete(expense.id)}
+                          onClick={() => setDeleteConfirmId(expense.id)}
                           className="text-red-400 hover:text-red-600 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                         >
                           <Trash2 className="w-4 h-4" />

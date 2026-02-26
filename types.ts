@@ -44,3 +44,27 @@ export interface DailyStatus {
   isToday: boolean;
   bookings: Booking[];
 }
+
+export interface BarTransaction {
+  id: string;
+  type: 'income' | 'expense';
+  quantity?: number;
+  amount: number;
+  description: string;
+  date: string; // ISO Date string YYYY-MM-DD
+  createdAt: number;
+
+  // Para conexión con inventario
+  isFromInventory?: boolean;
+  inventoryItemId?: string;
+}
+
+export interface BarInventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  initialStock: number;
+  currentStock: number;
+  price: number;
+  createdAt: number;
+}

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { format, addMonths, subMonths, endOfMonth, endOfWeek, eachDayOfInterval, isSameMonth, isToday, addWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, DollarSign, LogOut, Tent, Bike, BedDouble, Home, ShoppingCart, BarChart3, Moon, Sun, Footprints } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, DollarSign, LogOut, Tent, Bike, BedDouble, Home, ShoppingCart, BarChart3, Moon, Sun, Footprints, Beer } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { ROOMS } from '../constants';
-import { Booking, Room, Expense, SenderoRecord } from '../types';
+import { Booking, Room, Expense, SenderoRecord, BarTransaction, BarInventoryItem } from '../types';
 import {
   getBookings,
   saveBooking,
@@ -16,6 +16,14 @@ import {
   getSenderoRecords,
   saveSenderoRecord,
   deleteSenderoRecord,
+  getBarTransactions,
+  saveBarTransaction,
+  updateBarTransaction,
+  deleteBarTransaction,
+  getBarInventoryItems,
+  saveBarInventoryItem,
+  updateBarInventoryItem,
+  deleteBarInventoryItem,
   syncFromFirestore,
 } from "../services/storageService";
 
@@ -26,6 +34,7 @@ import { FinanceView } from './FinanceView';
 import { ExpensesView } from './ExpensesView';
 import { StatsView } from './StatsView';
 import { SenderoView } from './SenderoView';
+import { BarView } from './BarView';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -66,7 +75,7 @@ const parseLocalISO = (s: string) => {
   return new Date(y, m - 1, d);
 };
 
-type ViewType = 'calendar' | 'finance' | 'expenses' | 'stats' | 'sendero';
+type ViewType = 'calendar' | 'finance' | 'expenses' | 'stats' | 'sendero' | 'bar';
 
 export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const { theme, toggleTheme } = useTheme();
@@ -75,6 +84,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [senderoRecords, setSenderoRecords] = useState<SenderoRecord[]>([]);
+  const [barTransactions, setBarTransactions] = useState<BarTransaction[]>([]);
+  const [barInventory, setBarInventory] = useState<BarInventoryItem[]>([]);
   const [activeView, setActiveView] = useState<ViewType>('calendar');
 
   // Modal States
@@ -93,6 +104,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       setBookings(getBookings());
       setExpenses(getExpenses());
       setSenderoRecords(getSenderoRecords());
+      setBarTransactions(getBarTransactions());
+      setBarInventory(getBarInventoryItems());
     };
 
     loadData();
@@ -103,6 +116,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     setBookings(getBookings());
     setExpenses(getExpenses());
     setSenderoRecords(getSenderoRecords());
+    setBarTransactions(getBarTransactions());
+    setBarInventory(getBarInventoryItems());
   };
 
   // Calendar Navigation
@@ -156,6 +171,36 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     refreshData();
   };
 
+  const handleBarAdd = (record: BarTransaction) => {
+    saveBarTransaction(record);
+    refreshData();
+  };
+
+  const handleBarUpdate = (record: BarTransaction) => {
+    updateBarTransaction(record);
+    refreshData();
+  };
+
+  const handleBarDelete = (id: string) => {
+    deleteBarTransaction(id);
+    refreshData();
+  };
+
+  const handleBarInventoryAdd = (item: BarInventoryItem) => {
+    saveBarInventoryItem(item);
+    refreshData();
+  };
+
+  const handleBarInventoryUpdate = (item: BarInventoryItem) => {
+    updateBarInventoryItem(item);
+    refreshData();
+  };
+
+  const handleBarInventoryDelete = (id: string) => {
+    deleteBarInventoryItem(id);
+    refreshData();
+  };
+
   // Helper to check if a room is occupied on a date
   const checkRoomOccupancy = (date: Date, roomId: string) => {
     const dayStart = getStartOfDay(date);
@@ -178,6 +223,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         return <StatsView bookings={bookings} expenses={expenses} />;
       case 'sendero':
         return <SenderoView records={senderoRecords} onAddRecord={handleSenderoAdd} onDeleteRecord={handleSenderoDelete} />;
+      case 'bar':
+        return (
+          <BarView
+            transactions={barTransactions}
+            inventoryItems={barInventory}
+            onAddTransaction={handleBarAdd}
+            onUpdateTransaction={handleBarUpdate}
+            onDeleteTransaction={handleBarDelete}
+            onAddInventoryItem={handleBarInventoryAdd}
+            onUpdateInventoryItem={handleBarInventoryUpdate}
+            onDeleteInventoryItem={handleBarInventoryDelete}
+          />
+        );
       default:
         return (
           <>
@@ -316,6 +374,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </button>
 
           <button
+            onClick={() => setActiveView('bar')}
+            className={`p-2 rounded-lg flex items-center gap-2 transition ${activeView === 'bar'
+              ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+          >
+            <Beer className="w-5 h-5" />
+            <span className="text-sm font-medium">Bar</span>
+          </button>
+
+          <button
             onClick={() => setActiveView('expenses')}
             className={`p-2 rounded-lg flex items-center gap-2 transition ${activeView === 'expenses'
               ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
@@ -434,6 +503,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           >
             <Footprints className="w-6 h-6" />
             <span className="text-xs font-medium">Sendero</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('bar')}
+            className={`flex flex-col items-center gap-1 p-2 rounded-lg transition ${activeView === 'bar'
+              ? 'text-orange-600 dark:text-orange-400'
+              : 'text-gray-500 dark:text-gray-400'
+              }`}
+          >
+            <Beer className="w-6 h-6" />
+            <span className="text-xs font-medium">Bar</span>
           </button>
 
           <button

@@ -3,6 +3,7 @@ import { SenderoRecord } from '../types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Plus, Trash2, Footprints } from 'lucide-react';
+import { ConfirmModal } from './ConfirmModal';
 
 interface SenderoViewProps {
     records: SenderoRecord[];
@@ -19,6 +20,7 @@ export const SenderoView: React.FC<SenderoViewProps> = ({ records, onAddRecord, 
     const [horas, setHoras] = useState('');
     const [fecha, setFecha] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [errors, setErrors] = useState<string[]>([]);
+    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
     const validateForm = (): boolean => {
         const newErrors: string[] = [];
@@ -179,6 +181,18 @@ export const SenderoView: React.FC<SenderoViewProps> = ({ records, onAddRecord, 
                 </form>
             </div>
 
+            {deleteConfirmId && (
+                <ConfirmModal
+                    isOpen={!!deleteConfirmId}
+                    title="Eliminar registro"
+                    message="¿Estás seguro de eliminar este registro?"
+                    messageSecondary="Esta acción no se puede deshacer."
+                    confirmText="Eliminar"
+                    onConfirm={() => onDeleteRecord(deleteConfirmId)}
+                    onCancel={() => setDeleteConfirmId(null)}
+                />
+            )}
+
             {/* Records List */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden transition-colors duration-200">
                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-b dark:border-gray-700">
@@ -226,11 +240,7 @@ export const SenderoView: React.FC<SenderoViewProps> = ({ records, onAddRecord, 
                                         </td>
                                         <td className="px-4 py-3 text-center">
                                             <button
-                                                onClick={() => {
-                                                    if (confirm('¿Estás seguro de eliminar este registro?')) {
-                                                        onDeleteRecord(record.id);
-                                                    }
-                                                }}
+                                                onClick={() => setDeleteConfirmId(record.id)}
                                                 className="text-red-400 hover:text-red-600 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                                             >
                                                 <Trash2 className="w-4 h-4" />
