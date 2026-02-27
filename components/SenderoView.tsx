@@ -5,6 +5,8 @@ import { es } from 'date-fns/locale';
 import { Plus, Trash2, Footprints } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 
+let globalSenderoDate: string | null = null;
+
 interface SenderoViewProps {
     records: SenderoRecord[];
     onAddRecord: (record: SenderoRecord) => void;
@@ -18,7 +20,7 @@ export const SenderoView: React.FC<SenderoViewProps> = ({ records, onAddRecord, 
     const [cantidadPersonas, setCantidadPersonas] = useState('');
     const [precioPorPersona, setPrecioPorPersona] = useState('');
     const [horas, setHoras] = useState('');
-    const [fecha, setFecha] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [fecha, setFecha] = useState(globalSenderoDate || format(new Date(), 'yyyy-MM-dd'));
     const [errors, setErrors] = useState<string[]>([]);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -66,7 +68,7 @@ export const SenderoView: React.FC<SenderoViewProps> = ({ records, onAddRecord, 
         setCantidadPersonas('');
         setPrecioPorPersona('');
         setHoras('');
-        setFecha(format(new Date(), 'yyyy-MM-dd'));
+        setFecha(globalSenderoDate || format(new Date(), 'yyyy-MM-dd'));
         setErrors([]);
     };
 
@@ -118,7 +120,10 @@ export const SenderoView: React.FC<SenderoViewProps> = ({ records, onAddRecord, 
                             <input
                                 type="date"
                                 value={fecha}
-                                onChange={(e) => setFecha(e.target.value)}
+                                onChange={(e) => {
+                                    setFecha(e.target.value);
+                                    globalSenderoDate = e.target.value;
+                                }}
                                 className="w-full p-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             />
                         </div>

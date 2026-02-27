@@ -6,6 +6,8 @@ import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, Trash2, ShoppingCart } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 
+let globalExpenseDate: string | null = null;
+
 interface ExpensesViewProps {
   expenses: Expense[];
   onUpdate: () => void;
@@ -32,7 +34,10 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
   // Form State
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer'>('cash');
+  const [date, setDate] = useState(globalExpenseDate || format(new Date(), 'yyyy-MM-dd'));
+  const [formError, setFormError] = useState<string | null>(null);
+  const [successAnim, setSuccessAnim] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const monthlyExpenses = useMemo(() => {
@@ -48,13 +53,26 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!description || !amount || !date) return;
+    if (!date) {
+      setFormError('La fecha es obligatoria.');
+      return;
+    }
+    if (!description) {
+      setFormError('El concepto es obligatorio.');
+      return;
+    }
+    if (!amount) {
+      setFormError('El costo es obligatorio.');
+      return;
+    }
+    setFormError(null);
 
     const newExpense: Expense = {
       id: generateId(),
       date,
       description,
       amount: parseFloat(amount),
+      paymentMethod,
       createdAt: Date.now()
     };
 
@@ -64,6 +82,9 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
     // Reset form but keep date
     setDescription('');
     setAmount('');
+
+    setSuccessAnim(true);
+    setTimeout(() => setSuccessAnim(false), 1500);
   };
 
   const handleDeleteSubmit = () => {
@@ -111,15 +132,28 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Form Section */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm h-fit transition-colors duration-200">
+        <div className={`relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm h-fit transition-all duration-300 ${successAnim ? 'border-2 border-green-500 ring-2 ring-green-200 dark:ring-green-900 scale-[1.01]' : 'border border-transparent'}`}>
+          {successAnim && (
+            <div className="absolute -top-3 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-md animate-bounce flex items-center gap-1">
+              <span className="text-xl leading-none">✓</span> Guardado
+            </div>
+          )}
           <h3 className="font-bold text-gray-700 dark:text-gray-200 mb-4 border-b dark:border-gray-700 pb-2">Nueva Compra</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {formError && (
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-sm border border-red-200 dark:border-red-800">
+                {formError}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Fecha</label>
               <input
                 type="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  globalExpenseDate = e.target.value;
+                }}
                 className="w-full p-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 required
               />
@@ -145,8 +179,26 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full p-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none font-bold text-gray-800 dark:text-white bg-white dark:bg-gray-700"
-                required
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Método de Pago</label>
+              <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('cash')}
+                  className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition ${paymentMethod === 'cash' ? 'bg-white dark:bg-gray-600 shadow text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}
+                >
+                  Efectivo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('transfer')}
+                  className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition ${paymentMethod === 'transfer' ? 'bg-white dark:bg-gray-600 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
+                >
+                  Transferencia
+                </button>
+              </div>
             </div>
             <button
               type="submit"
@@ -189,6 +241,9 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
                       </td>
                       <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">
                         {expense.description}
+                        <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${expense.paymentMethod === 'transfer' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'}`}>
+                          {expense.paymentMethod === 'transfer' ? 'Transf.' : 'Efectivo'}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-gray-700 dark:text-gray-300">
                         ${expense.amount.toLocaleString()}

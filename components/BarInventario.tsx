@@ -15,6 +15,7 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
     const [category, setCategory] = useState('');
     const [stock, setStock] = useState('');
     const [price, setPrice] = useState('');
+    const [formError, setFormError] = useState<string | null>(null);
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -30,9 +31,37 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
 
     const handleAdd = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name || !stock || !price) return;
+
+        if (!name) {
+            setFormError('El nombre del producto es obligatorio.');
+            return;
+        }
+        if (!category) {
+            setFormError('La categoría es obligatoria.');
+            return;
+        }
+        if (!stock) {
+            setFormError('El stock inicial es obligatorio.');
+            return;
+        }
+        if (!price) {
+            setFormError('El precio unitario es obligatorio.');
+            return;
+        }
 
         const initialQuant = parseInt(stock, 10);
+        if (isNaN(initialQuant) || initialQuant < 0) {
+            setFormError('El stock debe ser un número válido (0 o mayor).');
+            return;
+        }
+
+        const priceNum = parseFloat(price);
+        if (isNaN(priceNum) || priceNum < 0) {
+            setFormError('El precio debe ser un valor válido.');
+            return;
+        }
+
+        setFormError(null);
 
         onAdd({
             id: crypto.randomUUID(),
@@ -63,7 +92,24 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
     const cancelEdit = () => setEditingId(null);
 
     const saveEdit = (id: string, originalItem: BarInventoryItem) => {
-        if (!editForm.name || !editForm.currentStock || !editForm.price) return;
+        if (!editForm.name) {
+            setFormError('El nombre del producto es obligatorio.');
+            return;
+        }
+        if (!editForm.category) {
+            setFormError('La categoría es obligatoria.');
+            return;
+        }
+        if (!editForm.currentStock) {
+            setFormError('El stock es obligatorio.');
+            return;
+        }
+        if (!editForm.price) {
+            setFormError('El precio es obligatorio.');
+            return;
+        }
+
+        setFormError(null);
 
         onUpdate({
             ...originalItem,
@@ -78,6 +124,11 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
     return (
         <div className="space-y-6">
             <form onSubmit={handleAdd} className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-12 gap-4">
+                {formError && (
+                    <div className="col-span-1 md:col-span-12 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-sm border border-red-200 dark:border-red-800">
+                        {formError}
+                    </div>
+                )}
                 <div className="col-span-1 md:col-span-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre del Producto</label>
                     <input
@@ -93,6 +144,7 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoría</label>
                     <input
                         type="text"
+                        required
                         placeholder="Bebidas, Comida..."
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}

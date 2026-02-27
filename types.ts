@@ -26,6 +26,7 @@ export interface Expense {
   date: string; // ISO Date string YYYY-MM-DD
   description: string;
   amount: number;
+  paymentMethod?: 'cash' | 'transfer';
   createdAt: number;
 }
 
@@ -51,6 +52,7 @@ export interface BarTransaction {
   quantity?: number;
   amount: number;
   description: string;
+  paymentMethod?: 'cash' | 'transfer';
   date: string; // ISO Date string YYYY-MM-DD
   createdAt: number;
 

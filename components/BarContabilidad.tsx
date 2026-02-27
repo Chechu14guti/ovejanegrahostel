@@ -5,6 +5,8 @@ import { Plus, Edit2, Trash2, X, Check } from 'lucide-react';
 import { BarTransaction, BarInventoryItem } from '../types';
 import { ConfirmModal } from './ConfirmModal';
 
+let globalBarDate: string | null = null;
+
 interface BarContabilidadProps {
     transactions: BarTransaction[];
     inventoryItems: BarInventoryItem[];
@@ -26,8 +28,10 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
     const [quantity, setQuantity] = useState('1');
     const [amount, setAmount] = useState('');
     const [type, setType] = useState<'income' | 'expense'>('income');
-    const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer'>('cash');
+    const [date, setDate] = useState(globalBarDate || format(new Date(), 'yyyy-MM-dd'));
     const [formError, setFormError] = useState<string | null>(null);
+    const [successAnim, setSuccessAnim] = useState(false);
 
     const [isFromInventory, setIsFromInventory] = useState(false);
     const [selectedInventoryId, setSelectedInventoryId] = useState('');
@@ -41,7 +45,8 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
         amount: string;
         date: string;
         type: 'income' | 'expense';
-    }>({ description: '', quantity: '1', amount: '', date: '', type: 'income' });
+        paymentMethod: 'cash' | 'transfer';
+    }>({ description: '', quantity: '1', amount: '', date: '', type: 'income', paymentMethod: 'cash' });
 
     const selectedItem = inventoryItems.find(i => i.id === selectedInventoryId);
     const maxQuantity = type === 'income' && isFromInventory && selectedItem ? selectedItem.currentStock : undefined;
@@ -84,15 +89,36 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
 
         let finalDescription = description;
         if (type === 'income' && isFromInventory) {
-            if (!selectedInventoryId) return; // need an item
+            if (!selectedInventoryId) {
+                setFormError('Por favor, selecciona un producto del inventario.');
+                return;
+            }
             const item = inventoryItems.find(i => i.id === selectedInventoryId);
-            if (!item) return;
+            if (!item) {
+                setFormError('El producto seleccionado no es válido.');
+                return;
+            }
             finalDescription = item.name;
         }
 
-        if (!finalDescription || !amount || !date) return;
+        if (!finalDescription) {
+            setFormError('El concepto es obligatorio.');
+            return;
+        }
+        if (!amount) {
+            setFormError('El monto es obligatorio.');
+            return;
+        }
+        if (!date) {
+            setFormError('La fecha es obligatoria.');
+            return;
+        }
 
         const initialQuant = parseInt(quantity, 10);
+        if (isNaN(initialQuant) || initialQuant < 1) {
+            setFormError('La cantidad debe ser mayor o igual a 1.');
+            return;
+        }
 
         if (type === 'income' && isFromInventory && selectedInventoryId) {
             const item = inventoryItems.find(i => i.id === selectedInventoryId);
@@ -107,8 +133,9 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
             id: crypto.randomUUID(),
             description: finalDescription,
             quantity: initialQuant,
-            amount: parseFloat(amount),
+            amount: parseFloat(amount) * initialQuant,
             type,
+            paymentMethod,
             date,
             isFromInventory: type === 'income' ? isFromInventory : false,
             inventoryItemId: type === 'income' && isFromInventory ? selectedInventoryId : undefined,
@@ -124,7 +151,10 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
         setQuantity('1');
         setAmount('');
         setSelectedInventoryId('');
-        // keep date and type the same for convenience
+        // keep date, type, and paymentMethod the same for convenience
+
+        setSuccessAnim(true);
+        setTimeout(() => setSuccessAnim(false), 1500);
     };
 
     const startEdit = (t: BarTransaction) => {
@@ -135,6 +165,7 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
             amount: t.amount.toString(),
             date: t.date,
             type: t.type,
+            paymentMethod: t.paymentMethod || 'cash',
         });
     };
 
@@ -143,7 +174,18 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
     };
 
     const saveEdit = (id: string) => {
-        if (!editForm.description || !editForm.amount || !editForm.date) return;
+        if (!editForm.description) {
+            setFormError('El concepto es obligatorio.');
+            return;
+        }
+        if (!editForm.amount) {
+            setFormError('El monto es obligatorio.');
+            return;
+        }
+        if (!editForm.date) {
+            setFormError('La fecha es obligatoria.');
+            return;
+        }
 
         // Find the original timestamp and transaction
         const original = transactions.find(t => t.id === id);
@@ -173,13 +215,16 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
             }
         }
 
+        const finalAmount = parseFloat(editForm.amount) * newQuant;
+
         onUpdate({
             id,
             description: editForm.description,
             quantity: newQuant,
-            amount: parseFloat(editForm.amount),
+            amount: finalAmount,
             date: editForm.date,
             type: editForm.type,
+            paymentMethod: editForm.paymentMethod,
             isFromInventory: editForm.type === 'income' ? original?.isFromInventory : false,
             inventoryItemId: editForm.type === 'income' ? original?.inventoryItemId : undefined,
             createdAt: original?.createdAt || Date.now(),
@@ -189,7 +234,12 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
 
     return (
         <div className="space-y-6">
-            <form onSubmit={handleAdd} className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-12 gap-4">
+            <form onSubmit={handleAdd} className={`relative bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border transition-all duration-300 ${successAnim ? 'border-green-500 shadow-lg scale-[1.01] dark:border-green-500' : 'border-gray-200 dark:border-gray-700'} grid grid-cols-1 md:grid-cols-12 gap-4`}>
+                {successAnim && (
+                    <div className="absolute -top-3 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-md animate-bounce flex items-center gap-1">
+                        <Check className="w-4 h-4" /> Guardado
+                    </div>
+                )}
                 {formError && (
                     <div className="col-span-1 md:col-span-12 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-sm border border-red-200 dark:border-red-800">
                         {formError}
@@ -207,12 +257,33 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
                     </select>
                 </div>
                 <div className="col-span-1 md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Método de Pago</label>
+                    <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                        <button
+                            type="button"
+                            onClick={() => setPaymentMethod('cash')}
+                            className={`flex-1 py-1 px-2 text-sm font-medium rounded-md transition ${paymentMethod === 'cash' ? 'bg-white dark:bg-gray-600 shadow text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}
+                        >
+                            Efectivo
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPaymentMethod('transfer')}
+                            className={`flex-1 py-1 px-2 text-sm font-medium rounded-md transition ${paymentMethod === 'transfer' ? 'bg-white dark:bg-gray-600 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
+                        >
+                            Transf.
+                        </button>
+                    </div>
+                </div>
+                <div className="col-span-1 md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha</label>
                     <input
                         type="date"
-                        required
                         value={date}
-                        onChange={(e) => setDate(e.target.value)}
+                        onChange={(e) => {
+                            setDate(e.target.value);
+                            globalBarDate = e.target.value;
+                        }}
                         className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     />
                 </div>
@@ -220,7 +291,6 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Concepto</label>
                     {type === 'income' && isFromInventory ? (
                         <select
-                            required
                             value={selectedInventoryId}
                             onChange={handleInventoryChange}
                             className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -233,7 +303,6 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
                     ) : (
                         <input
                             type="text"
-                            required
                             placeholder="Ej: Cervezas x10"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
@@ -267,19 +336,19 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
                         type="number"
                         min="1"
                         max={maxQuantity}
-                        required
                         value={quantity}
                         onChange={(e) => handleQuantityChange(e.target.value)}
                         className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     />
                 </div>
                 <div className="col-span-1 md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monto</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Monto por unidad
+                    </label>
                     <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                         <input
                             type="number"
-                            required
                             min="0"
                             step="0.01"
                             value={amount}
@@ -361,6 +430,14 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
                                                     <option value="income">Ing (+)</option>
                                                     <option value="expense">Gas (-)</option>
                                                 </select>
+                                                <select
+                                                    value={editForm.paymentMethod}
+                                                    onChange={(e) => setEditForm(prev => ({ ...prev, paymentMethod: e.target.value as any }))}
+                                                    className="w-24 text-sm rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1"
+                                                >
+                                                    <option value="cash">Efectivo</option>
+                                                    <option value="transfer">Transf.</option>
+                                                </select>
                                                 <input
                                                     type="text"
                                                     value={editForm.description}
@@ -384,6 +461,8 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
                                                     value={editForm.amount}
                                                     onChange={(e) => setEditForm(prev => ({ ...prev, amount: e.target.value }))}
                                                     className="w-full text-sm rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1 text-right"
+                                                    title="Monto por unidad"
+                                                    placeholder="Monto/ud"
                                                 />
                                             </td>
                                             <td className="py-3 text-right">
@@ -405,6 +484,9 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
                                                 {t.description}
                                                 <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${t.type === 'income' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'}`}>
                                                     {t.type === 'income' ? 'Ingreso' : 'Gasto'}
+                                                </span>
+                                                <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${t.paymentMethod === 'transfer' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'}`}>
+                                                    {t.paymentMethod === 'transfer' ? 'Transf.' : 'Efectivo'}
                                                 </span>
                                             </td>
                                             <td className="py-3 text-right pr-4">

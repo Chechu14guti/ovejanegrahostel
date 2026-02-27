@@ -41,6 +41,16 @@ const saveLocalArray = <T>(key: string, value: T[]) => {
   }
 };
 
+const sanitizeForFirestore = <T extends Record<string, any>>(obj: T): T => {
+  const docData = { ...obj };
+  Object.keys(docData).forEach(key => {
+    if (docData[key] === undefined) {
+      delete docData[key];
+    }
+  });
+  return docData;
+};
+
 // ----------------- SYNC DESDE FIRESTORE -----------------
 
 /**
@@ -92,7 +102,7 @@ export const saveBooking = (booking: Booking): void => {
   saveLocalArray<Booking>(BOOKING_KEY, bookings);
 
   // Guardar también en Firestore
-  setDoc(doc(db, BOOKINGS_COLLECTION, booking.id), booking).catch((e) =>
+  setDoc(doc(db, BOOKINGS_COLLECTION, booking.id), sanitizeForFirestore(booking)).catch((e) =>
     console.error("Error guardando booking en Firestore", e)
   );
 };
@@ -104,7 +114,7 @@ export const updateBooking = (updated: Booking): void => {
   saveLocalArray<Booking>(BOOKING_KEY, bookings);
 
   // Actualizar en Firestore
-  setDoc(doc(db, BOOKINGS_COLLECTION, updated.id), updated).catch((e) =>
+  setDoc(doc(db, BOOKINGS_COLLECTION, updated.id), sanitizeForFirestore(updated)).catch((e) =>
     console.error("Error actualizando booking en Firestore", e)
   );
 };
@@ -131,7 +141,7 @@ export const saveExpense = (expense: Expense): void => {
   saveLocalArray<Expense>(EXPENSE_KEY, expenses);
 
   // Guardar también en Firestore
-  setDoc(doc(db, EXPENSES_COLLECTION, expense.id), expense).catch((e) =>
+  setDoc(doc(db, EXPENSES_COLLECTION, expense.id), sanitizeForFirestore(expense)).catch((e) =>
     console.error("Error guardando expense en Firestore", e)
   );
 };
@@ -158,7 +168,7 @@ export const saveSenderoRecord = (record: SenderoRecord): void => {
   saveLocalArray<SenderoRecord>(SENDERO_KEY, records);
 
   // Guardar también en Firestore
-  setDoc(doc(db, SENDERO_COLLECTION, record.id), record).catch((e) =>
+  setDoc(doc(db, SENDERO_COLLECTION, record.id), sanitizeForFirestore(record)).catch((e) =>
     console.error("Error guardando sendero record en Firestore", e)
   );
 };
@@ -185,7 +195,7 @@ export const saveBarTransaction = (transaction: BarTransaction): void => {
   saveLocalArray<BarTransaction>(BAR_TRANSACTIONS_KEY, transactions);
 
   // Guardar también en Firestore
-  setDoc(doc(db, BAR_TRANSACTIONS_COLLECTION, transaction.id), transaction).catch((e) =>
+  setDoc(doc(db, BAR_TRANSACTIONS_COLLECTION, transaction.id), sanitizeForFirestore(transaction)).catch((e) =>
     console.error("Error guardando bar transaction en Firestore", e)
   );
 };
@@ -197,7 +207,7 @@ export const updateBarTransaction = (updated: BarTransaction): void => {
   saveLocalArray<BarTransaction>(BAR_TRANSACTIONS_KEY, transactions);
 
   // Actualizar en Firestore
-  setDoc(doc(db, BAR_TRANSACTIONS_COLLECTION, updated.id), updated).catch((e) =>
+  setDoc(doc(db, BAR_TRANSACTIONS_COLLECTION, updated.id), sanitizeForFirestore(updated)).catch((e) =>
     console.error("Error actualizando bar transaction en Firestore", e)
   );
 };
@@ -223,7 +233,7 @@ export const saveBarInventoryItem = (item: BarInventoryItem): void => {
   items.push(item);
   saveLocalArray<BarInventoryItem>(BAR_INVENTORY_KEY, items);
 
-  setDoc(doc(db, BAR_INVENTORY_COLLECTION, item.id), item).catch((e) =>
+  setDoc(doc(db, BAR_INVENTORY_COLLECTION, item.id), sanitizeForFirestore(item)).catch((e) =>
     console.error("Error guardando bar inventory en Firestore", e)
   );
 };
@@ -234,7 +244,7 @@ export const updateBarInventoryItem = (updated: BarInventoryItem): void => {
   );
   saveLocalArray<BarInventoryItem>(BAR_INVENTORY_KEY, items);
 
-  setDoc(doc(db, BAR_INVENTORY_COLLECTION, updated.id), updated).catch((e) =>
+  setDoc(doc(db, BAR_INVENTORY_COLLECTION, updated.id), sanitizeForFirestore(updated)).catch((e) =>
     console.error("Error actualizando bar inventory en Firestore", e)
   );
 };

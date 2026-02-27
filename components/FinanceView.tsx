@@ -92,6 +92,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ bookings, expenses, se
       type: string;
       description: string;
       amount: number;
+      paymentMethod?: 'cash' | 'transfer';
       timestamp: number;
     }> = [];
 
@@ -128,6 +129,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ bookings, expenses, se
         type: 'Gasto',
         description: e.description,
         amount: -e.amount,
+        paymentMethod: e.paymentMethod,
         timestamp: parseLocalISO(e.date).getTime(),
       });
     });
@@ -315,6 +317,11 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ bookings, expenses, se
                     </td>
                     <td className="px-6 py-4 text-gray-900 dark:text-white">
                       {movement.description}
+                      {movement.paymentMethod && (
+                        <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${movement.paymentMethod === 'transfer' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'}`}>
+                          {movement.paymentMethod === 'transfer' ? 'Transf.' : 'Efectivo'}
+                        </span>
+                      )}
                     </td>
                     <td className={`px-6 py-4 text-right font-bold ${movement.amount >= 0
                       ? 'text-green-600 dark:text-green-400'
