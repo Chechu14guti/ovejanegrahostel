@@ -4,30 +4,9 @@ import { BarContabilidad } from './BarContabilidad';
 import { BarResumen } from './BarResumen';
 import { BarInventario } from './BarInventario';
 
-interface BarViewProps {
-    transactions: BarTransaction[];
-    inventoryItems: BarInventoryItem[];
-    onAddTransaction: (t: BarTransaction) => void;
-    onUpdateTransaction: (t: BarTransaction) => void;
-    onDeleteTransaction: (id: string) => void;
-
-    onAddInventoryItem: (item: BarInventoryItem) => void;
-    onUpdateInventoryItem: (item: BarInventoryItem) => void;
-    onDeleteInventoryItem: (id: string) => void;
-}
-
 type TabType = 'contabilidad' | 'resumen' | 'inventario';
 
-export const BarView: React.FC<BarViewProps> = ({
-    transactions,
-    inventoryItems,
-    onAddTransaction,
-    onUpdateTransaction,
-    onDeleteTransaction,
-    onAddInventoryItem,
-    onUpdateInventoryItem,
-    onDeleteInventoryItem,
-}) => {
+export const BarView: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('contabilidad');
 
     return (
@@ -72,33 +51,13 @@ export const BarView: React.FC<BarViewProps> = ({
 
                 <div className="p-4">
                     {activeTab === 'contabilidad' && (
-                        <BarContabilidad
-                            transactions={transactions}
-                            inventoryItems={inventoryItems}
-                            onAdd={onAddTransaction}
-                            onUpdate={onUpdateTransaction}
-                            onDelete={onDeleteTransaction}
-                            onChangeInventoryStock={(id, amountChange) => {
-                                const item = inventoryItems.find(i => i.id === id);
-                                if (item) {
-                                    onUpdateInventoryItem({
-                                        ...item,
-                                        currentStock: Math.max(0, item.currentStock + amountChange)
-                                    });
-                                }
-                            }}
-                        />
+                        <BarContabilidad />
                     )}
                     {activeTab === 'resumen' && (
-                        <BarResumen transactions={transactions} />
+                        <BarResumen />
                     )}
                     {activeTab === 'inventario' && (
-                        <BarInventario
-                            items={inventoryItems}
-                            onAdd={onAddInventoryItem}
-                            onUpdate={onUpdateInventoryItem}
-                            onDelete={onDeleteInventoryItem}
-                        />
+                        <BarInventario />
                     )}
                 </div>
             </div>

@@ -3,14 +3,16 @@ import { PackageOpen, Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 import { BarInventoryItem } from '../types';
 import { ConfirmModal } from './ConfirmModal';
 
-interface BarInventarioProps {
-    items: BarInventoryItem[];
-    onAdd: (item: BarInventoryItem) => void;
-    onUpdate: (item: BarInventoryItem) => void;
-    onDelete: (id: string) => void;
-}
+import { useStore } from '../store/useStore';
 
-export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUpdate, onDelete }) => {
+export const BarInventario: React.FC = () => {
+    const {
+        barInventoryItems: items,
+        addBarInventoryItem: onAdd,
+        updateBarInventoryItem: onUpdate,
+        deleteBarInventoryItem: onDelete
+    } = useStore();
+    const [productId, setProductId] = useState('');
     const [name, setName] = useState('');
     const [category, setCategory] = useState('');
     const [stock, setStock] = useState('');
@@ -21,13 +23,43 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
     const [editForm, setEditForm] = useState<{
+        id: string; // The numeric prefix string
         name: string;
         category: string;
         currentStock: string;
         price: string;
-    }>({ name: '', category: '', currentStock: '', price: '' });
+    }>({ id: '', name: '', category: '', currentStock: '', price: '' });
 
-    const sortedItems = [...items].sort((a, b) => a.name.localeCompare(b.name));
+    // Helper to parse "1.0. Agua sin gas" -> { id: "1.0", name: "Agua sin gas" }
+    const parseProductName = (fullName: string) => {
+        // This regex captures the numeric prefix (e.g. 1.0) and then consumes 
+        // any following dots, dashes, or whitespace before capturing the rest of the name.
+        const match = fullName.match(/^(\d+(?:\.\d+)*)(?:\s*[\.-]*\s*)(.*)$/);
+        if (match) {
+            return { id: match[1], name: match[2].trim() };
+        }
+        return { id: '', name: fullName.trim() };
+    };
+
+    const sortedItems = [...items].sort((a, b) => {
+        const parsedA = parseProductName(a.name);
+        const parsedB = parseProductName(b.name);
+
+        // If both have explicit numeric IDs, sort by them numerically
+        if (parsedA.id && parsedB.id) {
+            const partsA = parsedA.id.split('.').map(Number);
+            const partsB = parsedB.id.split('.').map(Number);
+
+            for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+                const numA = partsA[i] || 0;
+                const numB = partsB[i] || 0;
+                if (numA !== numB) return numA - numB;
+            }
+        }
+
+        // Fallback to alphabetical sort on the full name if no parseable ID
+        return a.name.localeCompare(b.name);
+    });
 
     const handleAdd = (e: React.FormEvent) => {
         e.preventDefault();
@@ -63,9 +95,11 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
 
         setFormError(null);
 
+        const combinedName = productId.trim() ? `${productId.trim()}. ${name.trim()}` : name.trim();
+
         onAdd({
             id: crypto.randomUUID(),
-            name,
+            name: combinedName,
             category: category || 'General',
             initialStock: initialQuant,
             currentStock: initialQuant,
@@ -73,6 +107,7 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
             createdAt: Date.now(),
         });
 
+        setProductId('');
         setName('');
         setCategory('');
         setStock('');
@@ -81,8 +116,10 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
 
     const startEdit = (item: BarInventoryItem) => {
         setEditingId(item.id);
+        const parsed = parseProductName(item.name);
         setEditForm({
-            name: item.name,
+            id: parsed.id,
+            name: parsed.name,
             category: item.category,
             currentStock: item.currentStock.toString(),
             price: item.price.toString(),
@@ -111,9 +148,11 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
 
         setFormError(null);
 
+        const combinedName = editForm.id.trim() ? `${editForm.id.trim()}. ${editForm.name.trim()}` : editForm.name.trim();
+
         onUpdate({
             ...originalItem,
-            name: editForm.name,
+            name: combinedName,
             category: editForm.category || 'General',
             currentStock: parseInt(editForm.currentStock, 10),
             price: parseFloat(editForm.price)
@@ -129,12 +168,22 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
                         {formError}
                     </div>
                 )}
-                <div className="col-span-1 md:col-span-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre del Producto</label>
+                <div className="col-span-1 md:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ID</label>
+                    <input
+                        type="text"
+                        placeholder="Ej: 1.0"
+                        value={productId}
+                        onChange={(e) => setProductId(e.target.value)}
+                        className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                </div>
+                <div className="col-span-1 md:col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label>
                     <input
                         type="text"
                         required
-                        placeholder="Ej: Cerveza IPA"
+                        placeholder="Ej: Agua sin gas"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -204,6 +253,7 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="border-b dark:border-gray-700 text-gray-500 dark:text-gray-400 text-sm whitespace-nowrap">
+                            <th className="pb-3 font-medium pr-4 w-16">ID</th>
                             <th className="pb-3 font-medium pr-4">Nombre</th>
                             <th className="pb-3 font-medium pr-4">Categoría</th>
                             <th className="pb-3 font-medium text-center pr-4">Stock Actual</th>
@@ -214,92 +264,104 @@ export const BarInventario: React.FC<BarInventarioProps> = ({ items, onAdd, onUp
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                         {sortedItems.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="py-12 text-center">
+                                <td colSpan={6} className="py-12 text-center">
                                     <PackageOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                                     <p className="text-gray-500 dark:text-gray-400 font-medium">Aún no hay productos en tu inventario</p>
                                 </td>
                             </tr>
                         ) : (
-                            sortedItems.map((item) => (
-                                <tr key={item.id} className="text-gray-900 dark:text-white whitespace-nowrap">
-                                    {editingId === item.id ? (
-                                        <>
-                                            <td className="py-3 pr-2">
-                                                <input
-                                                    type="text"
-                                                    value={editForm.name}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                                                    className="w-full text-sm rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1"
-                                                />
-                                            </td>
-                                            <td className="py-3 px-2">
-                                                <input
-                                                    type="text"
-                                                    value={editForm.category}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, category: e.target.value }))}
-                                                    className="w-full text-sm rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1"
-                                                />
-                                            </td>
-                                            <td className="py-3 px-2 text-center">
-                                                <input
-                                                    type="number"
-                                                    value={editForm.currentStock}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, currentStock: e.target.value }))}
-                                                    className="w-20 mx-auto text-sm rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1 text-center"
-                                                />
-                                            </td>
-                                            <td className="py-3 px-2">
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    value={editForm.price}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
-                                                    className="w-full text-sm rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1 text-right"
-                                                />
-                                            </td>
-                                            <td className="py-3 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <button onClick={() => saveEdit(item.id, item)} className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded">
-                                                        <Check className="w-5 h-5" />
-                                                    </button>
-                                                    <button onClick={cancelEdit} className="p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
-                                                        <X className="w-5 h-5" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <td className="py-3 font-medium pr-4">{item.name}</td>
-                                            <td className="py-3 text-gray-600 dark:text-gray-300 text-sm pr-4">{item.category}</td>
-                                            <td className="py-3 text-center text-lg font-bold pr-4">
-                                                <span className={`${item.currentStock <= 5 ? 'text-orange-500' : (item.currentStock === 0 ? 'text-red-500' : 'text-blue-600 dark:text-blue-400')}`}>
-                                                    {item.currentStock}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 text-right text-gray-600 dark:text-gray-300 pr-4">${item.price.toFixed(2)}</td>
-                                            <td className="py-3 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <button
-                                                        onClick={() => startEdit(item)}
-                                                        className="p-1 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded transition"
-                                                        title="Editar"
-                                                    >
-                                                        <Edit2 className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setDeleteConfirmId(item.id)}
-                                                        className="p-1 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded transition"
-                                                        title="Eliminar"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </>
-                                    )}
-                                </tr>
-                            ))
+                            sortedItems.map((item) => {
+                                const parsed = parseProductName(item.name);
+                                return (
+                                    <tr key={item.id} className="text-gray-900 dark:text-white whitespace-nowrap">
+                                        {editingId === item.id ? (
+                                            <>
+                                                <td className="py-3 px-1">
+                                                    <input
+                                                        type="text"
+                                                        value={editForm.id}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, id: e.target.value }))}
+                                                        className="w-16 text-sm rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1"
+                                                    />
+                                                </td>
+                                                <td className="py-3 pr-2">
+                                                    <input
+                                                        type="text"
+                                                        value={editForm.name}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                                                        className="w-full text-sm rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1"
+                                                    />
+                                                </td>
+                                                <td className="py-3 px-2">
+                                                    <input
+                                                        type="text"
+                                                        value={editForm.category}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, category: e.target.value }))}
+                                                        className="w-full text-sm rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1"
+                                                    />
+                                                </td>
+                                                <td className="py-3 px-2 text-center">
+                                                    <input
+                                                        type="number"
+                                                        value={editForm.currentStock}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, currentStock: e.target.value }))}
+                                                        className="w-20 mx-auto text-sm rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1 text-center"
+                                                    />
+                                                </td>
+                                                <td className="py-3 px-2">
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={editForm.price}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
+                                                        className="w-full text-sm rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1 text-right"
+                                                    />
+                                                </td>
+                                                <td className="py-3 text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button onClick={() => saveEdit(item.id, item)} className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded">
+                                                            <Check className="w-5 h-5" />
+                                                        </button>
+                                                        <button onClick={cancelEdit} className="p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                                                            <X className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td className="py-3 font-medium pr-4 text-gray-500 dark:text-gray-400">{parsed.id}</td>
+                                                <td className="py-3 font-medium pr-4">{parsed.name}</td>
+                                                <td className="py-3 text-gray-600 dark:text-gray-300 text-sm pr-4">{item.category}</td>
+                                                <td className="py-3 text-center text-lg font-bold pr-4">
+                                                    <span className={`${item.currentStock <= 5 ? 'text-orange-500' : (item.currentStock === 0 ? 'text-red-500' : 'text-blue-600 dark:text-blue-400')}`}>
+                                                        {item.currentStock}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 text-right text-gray-600 dark:text-gray-300 pr-4">${item.price.toFixed(2)}</td>
+                                                <td className="py-3 text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button
+                                                            onClick={() => startEdit(item)}
+                                                            className="p-1 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded transition"
+                                                            title="Editar"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setDeleteConfirmId(item.id)}
+                                                            className="p-1 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded transition"
+                                                            title="Eliminar"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </>
+                                        )}
+                                    </tr>
+                                )
+                            })
                         )}
                     </tbody>
                 </table>

@@ -1,17 +1,23 @@
 import React, { useState, useMemo } from 'react';
 import { Expense } from '../types';
-import { saveExpense, deleteExpense } from '../services/storageService';
+import { useStore } from '../store/useStore';
 import { format, endOfMonth, isWithinInterval, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, Trash2, ShoppingCart } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 
-let globalExpenseDate: string | null = null;
-
-interface ExpensesViewProps {
-  expenses: Expense[];
-  onUpdate: () => void;
-}
+const getSystemDate = () => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+  } catch (e) {
+    return format(new Date(), 'yyyy-MM-dd');
+  }
+};
 
 // Helper functions
 const getStartOfMonth = (d: Date) => {
@@ -28,14 +34,15 @@ const parseLocalISO = (s: string) => {
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }) => {
+export const ExpensesView: React.FC = () => {
+  const { expenses, addExpense, deleteExpense } = useStore();
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Form State
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer'>('cash');
-  const [date, setDate] = useState(globalExpenseDate || format(new Date(), 'yyyy-MM-dd'));
+  const [date, setDate] = useState(() => getSystemDate());
   const [formError, setFormError] = useState<string | null>(null);
   const [successAnim, setSuccessAnim] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -46,7 +53,11 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
     return expenses.filter(e => {
       const expenseDate = parseLocalISO(e.date);
       return isWithinInterval(expenseDate, { start, end });
-    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }).sort((a, b) => {
+      const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
   }, [expenses, currentMonth]);
 
   const totalMonthly = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
@@ -76,12 +87,12 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
       createdAt: Date.now()
     };
 
-    saveExpense(newExpense);
-    onUpdate();
+    addExpense(newExpense);
 
-    // Reset form but keep date
+    // Reset form
     setDescription('');
     setAmount('');
+    setDate(getSystemDate());
 
     setSuccessAnim(true);
     setTimeout(() => setSuccessAnim(false), 1500);
@@ -90,7 +101,6 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
   const handleDeleteSubmit = () => {
     if (deleteConfirmId) {
       deleteExpense(deleteConfirmId);
-      onUpdate();
       setDeleteConfirmId(null);
     }
   };
@@ -152,7 +162,6 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, onUpdate }
                 value={date}
                 onChange={(e) => {
                   setDate(e.target.value);
-                  globalExpenseDate = e.target.value;
                 }}
                 className="w-full p-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 required

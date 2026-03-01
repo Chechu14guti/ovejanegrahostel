@@ -1,31 +1,127 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Booking, Expense, BarTransaction } from '../types';
+import { Booking, Expense, BarTransaction, SenderoRecord, Room } from '../types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ROOMS } from '../constants';
+// The ROOMS import is kept as it might be used elsewhere or for type inference if the parameter is not always provided.
+// However, the new function signature implies ROOMS will be passed as a parameter.
+import { ROOMS as CONSTANT_ROOMS } from '../constants';
 
 export const generateMonthlyReport = (
-  bookings: Booking[],
+  totalIncomeReservations: number,
+  totalExpenses: number,
+  totalIncome: number,
+  netProfit: number,
   expenses: Expense[],
-  date: Date
+  currentMonth: Date,
+  bookings: Booking[],
+  senderoRecords: SenderoRecord[],
+  barTransactions: BarTransaction[] = [],
+  senderoIncome: number,
+  filterType: 'day' | 'month' | 'year' = 'month',
+  activeFilter: string | null = null,
+  filteredMovements: any[] = []
 ) => {
   const doc = new jsPDF();
 
-  const monthName = format(date, 'MMMM yyyy', { locale: es }).toUpperCase();
+  // Define formatted date strings based on filterType
+  let titleDateStr = '';
+  let fileDateStr = '';
+  if (filterType === 'day') {
+    titleDateStr = format(currentMonth, 'dd MMMM yyyy', { locale: es });
+    fileDateStr = format(currentMonth, 'yyyy-MM-dd');
+  } else if (filterType === 'year') {
+    titleDateStr = format(currentMonth, 'yyyy', { locale: es });
+    fileDateStr = format(currentMonth, 'yyyy');
+  } else {
+    titleDateStr = format(currentMonth, 'MMMM yyyy', { locale: es });
+    fileDateStr = format(currentMonth, 'yyyy-MM');
+  }
 
-  // Título
-  doc.setFontSize(18);
-  doc.text(`Reporte de Facturación - ${monthName}`, 14, 22);
+  // Título Dinámico
+  let tituloPrincipal = `Reporte de Facturación`;
+  if (activeFilter && activeFilter !== 'profit') {
+    const labels: Record<string, string> = {
+      'income-reservas': 'Ingresos Reservas',
+      'income-sendero': 'Ingresos Sendero',
+      'income-bar': 'Ingresos Bar',
+      'total-income': 'Total Ingresos',
+      'expenses': 'Gastos y Compras',
+      'pending': 'Pendiente de Cobro'
+    };
+    tituloPrincipal += ` - ${labels[activeFilter] || 'Filtrado'}`;
+  }
+
+  doc.setFontSize(20);
+  doc.text(`${tituloPrincipal} (${titleDateStr.charAt(0).toUpperCase() + titleDateStr.slice(1)})`, 14, 22);
 
   // Fecha de generación
   doc.setFontSize(11);
   doc.setTextColor(100);
   doc.text(`Generado el: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 30);
 
+  // Fix for ESM import quirks
+  // @ts-ignore
+  const applyAutoTable = autoTable.default || autoTable;
+
+  if (activeFilter && activeFilter !== 'profit') {
+    // ------------------ TABLA DE MOVIMIENTOS FILTRADOS ------------------
+    if (filteredMovements.length > 0 && typeof applyAutoTable === 'function') {
+      const movementsTableData = filteredMovements.map(m => [
+        m.date,
+        m.type,
+        m.description,
+        m.paymentMethod === 'transfer' ? 'Transf.' : (m.paymentMethod === 'cash' ? 'Efectivo' : '-'),
+        `$${Math.abs(m.amount).toLocaleString()}`
+      ]);
+
+      applyAutoTable(doc, {
+        head: [['Fecha', 'Tipo', 'Concepto', 'Método', 'Monto']],
+        body: movementsTableData,
+        startY: 40,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+        styles: { fontSize: 9 },
+        alternateRowStyles: { fillColor: [245, 245, 245] }
+      });
+
+      // @ts-ignore
+      let lastY = (doc as any).lastAutoTable?.finalY || 40;
+
+      const totalFiltrado = filteredMovements.reduce((sum, m) => sum + m.amount, 0);
+
+      doc.setFontSize(12);
+      doc.setTextColor(0);
+      doc.text('Resumen del Filtro:', 14, lastY + 15);
+
+      applyAutoTable(doc, {
+        body: [
+          [{ content: 'TOTAL SELECCIONADO:', styles: { fontStyle: 'bold' } },
+          { content: `$${totalFiltrado.toLocaleString()}`, styles: { fontStyle: 'bold', textColor: totalFiltrado >= 0 ? [46, 204, 113] : [231, 76, 60] } }]
+        ],
+        startY: lastY + 22,
+        theme: 'plain',
+        styles: { fontSize: 11, cellPadding: 2 },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 70 },
+          1: { halign: 'right', cellWidth: 50 }
+        }
+      });
+    } else {
+      doc.setFontSize(12);
+      doc.text(`No hay movimientos para este filtro en la fecha seleccionada.`, 14, 45);
+    }
+
+    const filename = `reporte-${activeFilter}-${fileDateStr}.pdf`;
+    doc.save(filename);
+    return;
+  }
+
+  // ------------------ REPORTE GENERAL (CÓDIGO ORIGINAL) ------------------
+
   // ------------------ TABLA RESERVAS ------------------
   const bookingsTableData = bookings.map((b) => {
-    const roomName = ROOMS.find((r) => r.id === b.roomId)?.name || 'Desconocido';
+    const roomName = CONSTANT_ROOMS.find((r) => r.id === b.roomId)?.name || 'Desconocido';
     return [
       format(new Date(b.checkIn), 'dd/MM'),
       format(new Date(b.checkOut), 'dd/MM'),
@@ -38,14 +134,13 @@ export const generateMonthlyReport = (
     ];
   });
 
-  const totalIncome = bookings.reduce((sum, b) => sum + b.total, 0);
-  const totalDeposited = bookings.reduce((sum, b) => sum + b.deposit, 0);
-  const totalPending = bookings.reduce((sum, b) => sum + b.remaining, 0);
-  const totalCollected = totalIncome - totalPending; // lo realmente cobrado
+  // The original calculations for totalIncome, totalDeposited, totalPending, totalCollected are replaced by parameters.
+  // const totalIncome = bookings.reduce((sum, b) => sum + b.total, 0);
+  // const totalDeposited = bookings.reduce((sum, b) => sum + b.deposit, 0);
+  // const totalPending = bookings.reduce((sum, b) => sum + b.remaining, 0);
+  // const totalCollected = totalIncome - totalPending; // lo realmente cobrado
 
-  // Fix for ESM import quirks
-  // @ts-ignore
-  const applyAutoTable = autoTable.default || autoTable;
+  // The applyAutoTable variable was already assigned above so we reuse it here
 
   if (typeof applyAutoTable === 'function') {
     applyAutoTable(doc, {
@@ -64,8 +159,9 @@ export const generateMonthlyReport = (
       body: bookingsTableData,
       startY: 40,
       theme: 'grid',
-      headStyles: { fillColor: [41, 128, 185] },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
       styles: { fontSize: 9 },
+      alternateRowStyles: { fillColor: [245, 245, 245] }
     });
   } else {
     console.error('Could not load autoTable plugin', autoTable);
@@ -74,8 +170,12 @@ export const generateMonthlyReport = (
   // @ts-ignore
   let lastY = (doc as any).lastAutoTable?.finalY || 40;
 
-  // ------------------ TABLA GASTOS / COMPRAS ------------------
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+  // ------------------ TABLA GASTOS / COMPRAS ------------------  // Calculate totalCollected and totalPending from the bookings parameter
+  const totalPending = bookings.reduce((sum, b) => sum + b.remaining, 0);
+  const totalCollected = bookings.reduce((sum, b) => sum + b.total, 0) - totalPending;
+
+  // Render expenses table
+  const totalExpensesFromList = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   if (expenses.length > 0 && typeof applyAutoTable === 'function') {
     const expensesTableData = expenses.map((e) => [
@@ -98,32 +198,77 @@ export const generateMonthlyReport = (
   }
 
   // ------------------ RESUMEN DEL MES ------------------
-  const realProfit = totalIncome - totalExpenses;
+  const barIncome = barTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const barExpense = barTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+
+  const totalCombinedIncome = totalIncome + barIncome;
+  const totalCombinedExpenses = totalExpensesFromList + barExpense;
+  const realProfit = totalCombinedIncome - totalCombinedExpenses;
 
   doc.setFontSize(12);
   doc.setTextColor(0);
   doc.text('Resumen del Mes:', 14, lastY + 15);
 
   doc.setFontSize(10);
-  doc.text(`Total Facturado (Reservas): $${totalIncome}`, 14, lastY + 22);
-  doc.text(`Total Gastos / Compras: $${totalExpenses}`, 14, lastY + 27);
-  doc.text(`Beneficio Real (Ingresos - Gastos): $${realProfit}`, 14, lastY + 32);
-  doc.text(`Total Cobrado (Señas + Pagos): $${totalCollected}`, 14, lastY + 37);
-  doc.text(`Total Pendiente de Cobro: $${totalPending}`, 14, lastY + 42);
+  // The original summary section is replaced with a new autoTable for better formatting
+  const summaryTableData = [
+    [{ content: 'Total Ingresos Reservas:', styles: { fontStyle: 'bold' } }, { content: `$${totalIncome.toLocaleString()}`, styles: { fontStyle: 'bold', textColor: [41, 128, 185] } }],
+    [{ content: 'Total Ingresos Sendero:', styles: { fontStyle: 'bold' } }, { content: `$${senderoIncome.toLocaleString()}`, styles: { fontStyle: 'bold', textColor: [46, 204, 113] } }],
+    [
+      { content: 'Total Ingresos Bar:', styles: { fontStyle: 'bold' } },
+      { content: `$${barIncome.toLocaleString()}`, styles: { fontStyle: 'bold', textColor: [46, 204, 113] } }
+    ],
+    [
+      { content: 'Total Gastos Bar:', styles: { fontStyle: 'bold' } },
+      { content: `-$${barExpense.toLocaleString()}`, styles: { fontStyle: 'bold', textColor: [231, 76, 60] } }
+    ],
+    [{ content: 'Total Cobrado Reservas:', styles: { fontStyle: 'bold' } }, { content: `$${totalCollected.toLocaleString()}`, styles: { fontStyle: 'bold' } }],
+    [{ content: 'Total Pendiente Reservas:', styles: { fontStyle: 'bold' } }, { content: `$${totalPending.toLocaleString()}`, styles: { textColor: [231, 76, 60], fontStyle: 'bold' } }],
+    [{ content: 'Total Gastos:', styles: { fontStyle: 'bold' } }, { content: `-$${totalExpensesFromList.toLocaleString()}`, styles: { textColor: [231, 76, 60], fontStyle: 'bold' } }],
+    [{ content: 'BENEFICIO NETO DEL PERIODO:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+    { content: `$${(totalCollected + senderoIncome + barIncome - totalExpensesFromList - barExpense).toLocaleString()}`, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: (totalCollected + senderoIncome + barIncome - totalExpensesFromList - barExpense) >= 0 ? [46, 204, 113] : [231, 76, 60] } }]
+  ];
 
-  doc.save(`reporte-hostel-${format(date, 'MM-yyyy')}.pdf`);
+  if (typeof applyAutoTable === 'function') {
+    applyAutoTable(doc, {
+      body: summaryTableData,
+      startY: lastY + 22,
+      theme: 'plain',
+      styles: { fontSize: 10, cellPadding: 2 },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 70 },
+        1: { halign: 'right', cellWidth: 50 }
+      }
+    });
+  }
+
+  doc.save(`reporte-facturacion-${fileDateStr}.pdf`);
 };
 
 export const generateBarMonthlyReport = (
   transactions: BarTransaction[],
-  date: Date
+  date: Date,
+  filterType: 'day' | 'month' | 'year' = 'month'
 ) => {
   const doc = new jsPDF();
-  const monthName = format(date, 'MMMM yyyy', { locale: es }).toUpperCase();
+
+  let periodName = '';
+  let fileNameDate = '';
+
+  if (filterType === 'day') {
+    periodName = format(date, 'dd MMMM yyyy', { locale: es }).toUpperCase();
+    fileNameDate = format(date, 'dd-MM-yyyy');
+  } else if (filterType === 'year') {
+    periodName = format(date, 'yyyy', { locale: es }).toUpperCase();
+    fileNameDate = format(date, 'yyyy');
+  } else {
+    periodName = format(date, 'MMMM yyyy', { locale: es }).toUpperCase();
+    fileNameDate = format(date, 'MM-yyyy');
+  }
 
   // Título
   doc.setFontSize(18);
-  doc.text(`Reporte de Bar - ${monthName}`, 14, 22);
+  doc.text(`Reporte de Bar - ${periodName}`, 14, 22);
 
   // Fecha de generación
   doc.setFontSize(11);
@@ -179,12 +324,12 @@ export const generateBarMonthlyReport = (
   // ------------------ RESUMEN DEL MES ------------------
   doc.setFontSize(12);
   doc.setTextColor(0);
-  doc.text('Resumen del Mes (Bar):', 14, lastY + 15);
+  doc.text('Resumen del Periodo (Bar):', 14, lastY + 15);
 
   doc.setFontSize(10);
   doc.text(`Total Ingresos: $${totalIncome.toFixed(2)}`, 14, lastY + 22);
   doc.text(`Total Gastos: $${totalExpense.toFixed(2)}`, 14, lastY + 27);
   doc.text(`Balance Neto: $${balance.toFixed(2)}`, 14, lastY + 32);
 
-  doc.save(`reporte-bar-${format(date, 'MM-yyyy')}.pdf`);
+  doc.save(`reporte-bar-${fileNameDate}.pdf`);
 };

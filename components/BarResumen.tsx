@@ -1,51 +1,102 @@
 import React, { useState } from 'react';
-import { format, subMonths, addMonths } from 'date-fns';
+import { format, subMonths, addMonths, subDays, addDays, subYears, addYears } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, DollarSign, Download, TrendingDown, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, DollarSign, Download, TrendingDown, TrendingUp, Calendar, CalendarDays, CalendarCheck } from 'lucide-react';
 import { BarTransaction } from '../types';
 import { generateBarMonthlyReport } from '../services/pdfService';
 
-interface BarResumenProps {
-    transactions: BarTransaction[];
-}
+import { useStore } from '../store/useStore';
 
-export const BarResumen: React.FC<BarResumenProps> = ({ transactions }) => {
-    const [selectedMonth, setSelectedMonth] = useState(new Date());
+export const BarResumen: React.FC = () => {
+    const { barTransactions: transactions } = useStore();
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [filterType, setFilterType] = useState<'day' | 'month' | 'year'>('month');
 
-    const currentMonthTransactions = transactions.filter(t => {
-        const tDate = new Date(t.date);
-        return tDate.getMonth() === selectedMonth.getMonth() &&
-            tDate.getFullYear() === selectedMonth.getFullYear();
+    const filteredTransactions = transactions.filter(t => {
+        // Use parseLocalISO trick or just string matching to avoid timezone shifts if t.date is YYYY-MM-DD
+        const tDate = new Date(t.date + 'T00:00:00'); // Force local midnight
+
+        if (filterType === 'day') {
+            return tDate.getDate() === selectedDate.getDate() &&
+                tDate.getMonth() === selectedDate.getMonth() &&
+                tDate.getFullYear() === selectedDate.getFullYear();
+        } else if (filterType === 'month') {
+            return tDate.getMonth() === selectedDate.getMonth() &&
+                tDate.getFullYear() === selectedDate.getFullYear();
+        } else { // year
+            return tDate.getFullYear() === selectedDate.getFullYear();
+        }
     });
 
-    const totalIncome = currentMonthTransactions
+    const totalIncome = filteredTransactions
         .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + t.amount, 0);
 
-    const totalExpense = currentMonthTransactions
+    const totalExpense = filteredTransactions
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0);
 
     const balance = totalIncome - totalExpense;
 
-    const handlePrevMonth = () => setSelectedMonth(subMonths(selectedMonth, 1));
-    const handleNextMonth = () => setSelectedMonth(addMonths(selectedMonth, 1));
+    const handlePrev = () => {
+        if (filterType === 'day') setSelectedDate(subDays(selectedDate, 1));
+        else if (filterType === 'month') setSelectedDate(subMonths(selectedDate, 1));
+        else setSelectedDate(subYears(selectedDate, 1));
+    };
+
+    const handleNext = () => {
+        if (filterType === 'day') setSelectedDate(addDays(selectedDate, 1));
+        else if (filterType === 'month') setSelectedDate(addMonths(selectedDate, 1));
+        else setSelectedDate(addYears(selectedDate, 1));
+    };
 
     const handleDownloadPDF = () => {
-        generateBarMonthlyReport(currentMonthTransactions, selectedMonth);
+        // PDF defaults to "Monthly" logic currently, but passing filtered works depending on pdfService.
+        generateBarMonthlyReport(filteredTransactions, selectedDate, filterType);
     };
 
     return (
         <div className="space-y-6">
-            {/* Month Selector */}
-            <div className="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition">
+            {/* Filter Type Toggle */}
+            <div className="flex justify-center mb-6">
+                <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl inline-flex shadow-sm border border-gray-200 dark:border-gray-700">
+                    <button
+                        onClick={() => setFilterType('day')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${filterType === 'day' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                    >
+                        <CalendarDays className="w-4 h-4" /> Día
+                    </button>
+                    <button
+                        onClick={() => setFilterType('month')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${filterType === 'month' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                    >
+                        <Calendar className="w-4 h-4" /> Mes
+                    </button>
+                    <button
+                        onClick={() => setFilterType('year')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${filterType === 'year' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                    >
+                        <CalendarCheck className="w-4 h-4" /> Año
+                    </button>
+                </div>
+            </div>
+
+            {/* Date Selector */}
+            <div className="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <button onClick={handlePrev} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition">
                     <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </button>
-                <span className="text-lg font-bold text-gray-900 dark:text-white capitalize">
-                    {format(selectedMonth, 'MMMM yyyy', { locale: es })}
-                </span>
-                <button onClick={handleNextMonth} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition">
+                <div className="flex flex-col items-center">
+                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">
+                        {filterType === 'day' ? 'Viendo por Día' : filterType === 'month' ? 'Viendo por Mes' : 'Viendo por Año'}
+                    </span>
+                    <span className="text-xl font-bold text-gray-900 dark:text-white capitalize">
+                        {filterType === 'day' && format(selectedDate, 'dd MMMM yyyy', { locale: es })}
+                        {filterType === 'month' && format(selectedDate, 'MMMM yyyy', { locale: es })}
+                        {filterType === 'year' && format(selectedDate, 'yyyy', { locale: es })}
+                    </span>
+                </div>
+                <button onClick={handleNext} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition">
                     <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </button>
             </div>
@@ -100,7 +151,7 @@ export const BarResumen: React.FC<BarResumenProps> = ({ transactions }) => {
                     className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                 >
                     <Download className="w-5 h-5" />
-                    <span>Descargar PDF del Mes</span>
+                    <span>Descargar PDF</span>
                 </button>
             </div>
 

@@ -4,10 +4,7 @@ import { format, subMonths, isWithinInterval, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
-interface StatsViewProps {
-    bookings: Booking[];
-    expenses: Expense[];
-}
+import { useStore } from '../store/useStore';
 
 const parseLocalISO = (s: string) => {
     const [y, m, d] = s.split('-').map(Number);
@@ -21,7 +18,8 @@ const getStartOfMonth = (d: Date) => {
     return newDate;
 };
 
-export const StatsView: React.FC<StatsViewProps> = ({ bookings, expenses }) => {
+export const StatsView: React.FC = () => {
+    const { bookings, expenses } = useStore();
 
     const monthlyData = useMemo(() => {
         const data = [];

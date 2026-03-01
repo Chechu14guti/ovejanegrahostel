@@ -1,12 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import { Dashboard } from './Dashboard';
+import { ThemeProvider } from '../context/ThemeContext';
 import { vi, describe, it, expect } from 'vitest';
 
 // Mock dependencies
 vi.mock('../services/storageService', () => ({
-    getBookings: vi.fn(() => []),
-    getExpenses: vi.fn(() => []),
-    syncFromFirestore: vi.fn(),
+    subscribeToBookings: vi.fn(() => vi.fn()),
+    subscribeToExpenses: vi.fn(() => vi.fn()),
+    subscribeToSenderoRecords: vi.fn(() => vi.fn()),
+    subscribeToBarTransactions: vi.fn(() => vi.fn()),
+    subscribeToBarInventoryItems: vi.fn(() => vi.fn()),
     saveBooking: vi.fn(),
     updateBooking: vi.fn(),
     deleteBooking: vi.fn(),
@@ -23,7 +26,11 @@ vi.mock('../constants', () => ({
 
 describe('Dashboard Component', () => {
     it('renders calendar days with the animation class', () => {
-        render(<Dashboard onLogout={() => { }} />);
+        render(
+            <ThemeProvider>
+                <Dashboard onLogout={() => { }} />
+            </ThemeProvider>
+        );
 
         // Find all buttons that represent calendar days
         // We can identify them because they contain the day number

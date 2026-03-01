@@ -5,27 +5,7 @@ import { ChevronLeft, ChevronRight, Calendar as CalIcon, DollarSign, LogOut, Ten
 import { useTheme } from '../context/ThemeContext';
 import { ROOMS } from '../constants';
 import { Booking, Room, Expense, SenderoRecord, BarTransaction, BarInventoryItem } from '../types';
-import {
-  getBookings,
-  saveBooking,
-  updateBooking,
-  deleteBooking,
-  getExpenses,
-  saveExpense,
-  deleteExpense,
-  getSenderoRecords,
-  saveSenderoRecord,
-  deleteSenderoRecord,
-  getBarTransactions,
-  saveBarTransaction,
-  updateBarTransaction,
-  deleteBarTransaction,
-  getBarInventoryItems,
-  saveBarInventoryItem,
-  updateBarInventoryItem,
-  deleteBarInventoryItem,
-  syncFromFirestore,
-} from "../services/storageService";
+import { useStore } from '../store/useStore';
 
 
 import { RoomListModal } from './RoomListModal';
@@ -81,11 +61,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const { theme, toggleTheme } = useTheme();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [senderoRecords, setSenderoRecords] = useState<SenderoRecord[]>([]);
-  const [barTransactions, setBarTransactions] = useState<BarTransaction[]>([]);
-  const [barInventory, setBarInventory] = useState<BarInventoryItem[]>([]);
+  const {
+    bookings,
+    expenses,
+    senderoRecords,
+    barTransactions,
+    barInventoryItems: barInventory,
+    initializeSubscriptions,
+    addBooking,
+    updateBooking,
+    deleteBooking,
+    addSenderoRecord,
+    deleteSenderoRecord,
+    addBarTransaction,
+    updateBarTransaction,
+    deleteBarTransaction,
+    addBarInventoryItem,
+    updateBarInventoryItem,
+    deleteBarInventoryItem
+  } = useStore();
+
   const [activeView, setActiveView] = useState<ViewType>('calendar');
 
   // Modal States
@@ -96,29 +91,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [editingBooking, setEditingBooking] = useState<Booking | undefined>(undefined);
 
   useEffect(() => {
-    const loadData = async () => {
-      // 1) Traemos todo desde Firestore y lo metemos en localStorage
-      await syncFromFirestore();
-
-      // 2) Cargamos desde localStorage a estado de React
-      setBookings(getBookings());
-      setExpenses(getExpenses());
-      setSenderoRecords(getSenderoRecords());
-      setBarTransactions(getBarTransactions());
-      setBarInventory(getBarInventoryItems());
+    const unsubscribe = initializeSubscriptions();
+    return () => {
+      unsubscribe();
     };
-
-    loadData();
-  }, []);
-
-
-  const refreshData = () => {
-    setBookings(getBookings());
-    setExpenses(getExpenses());
-    setSenderoRecords(getSenderoRecords());
-    setBarTransactions(getBarTransactions());
-    setBarInventory(getBarInventoryItems());
-  };
+  }, [initializeSubscriptions]);
 
   // Calendar Navigation
   const nextPeriod = () => setCurrentDate(viewMode === 'month' ? addMonths(currentDate, 1) : addWeeks(currentDate, 1));
@@ -149,57 +126,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     if (editingBooking) {
       updateBooking(booking);
     } else {
-      saveBooking(booking);
+      addBooking(booking);
     }
-    refreshData();
     setIsBookingModalOpen(false);
   };
 
   const handleBookingDelete = (id: string) => {
     deleteBooking(id);
-    refreshData();
     setIsBookingModalOpen(false);
   };
 
-  const handleSenderoAdd = (record: SenderoRecord) => {
-    saveSenderoRecord(record);
-    refreshData();
-  };
-
-  const handleSenderoDelete = (id: string) => {
-    deleteSenderoRecord(id);
-    refreshData();
-  };
-
-  const handleBarAdd = (record: BarTransaction) => {
-    saveBarTransaction(record);
-    refreshData();
-  };
-
-  const handleBarUpdate = (record: BarTransaction) => {
-    updateBarTransaction(record);
-    refreshData();
-  };
-
-  const handleBarDelete = (id: string) => {
-    deleteBarTransaction(id);
-    refreshData();
-  };
-
-  const handleBarInventoryAdd = (item: BarInventoryItem) => {
-    saveBarInventoryItem(item);
-    refreshData();
-  };
-
-  const handleBarInventoryUpdate = (item: BarInventoryItem) => {
-    updateBarInventoryItem(item);
-    refreshData();
-  };
-
-  const handleBarInventoryDelete = (id: string) => {
-    deleteBarInventoryItem(id);
-    refreshData();
-  };
+  // We are removing these handlers because child components will use Zustand directly
+  // Left these blank for now until we refactor the props down below.
 
   // Helper to check if a room is occupied on a date
   const checkRoomOccupancy = (date: Date, roomId: string) => {
@@ -216,25 +154,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const renderContent = () => {
     switch (activeView) {
       case 'finance':
-        return <FinanceView bookings={bookings} expenses={expenses} senderoRecords={senderoRecords} />;
+        return <FinanceView />;
       case 'expenses':
-        return <ExpensesView expenses={expenses} onUpdate={refreshData} />;
+        return <ExpensesView />;
       case 'stats':
-        return <StatsView bookings={bookings} expenses={expenses} />;
+        return <StatsView />;
       case 'sendero':
-        return <SenderoView records={senderoRecords} onAddRecord={handleSenderoAdd} onDeleteRecord={handleSenderoDelete} />;
+        return <SenderoView />;
       case 'bar':
         return (
-          <BarView
-            transactions={barTransactions}
-            inventoryItems={barInventory}
-            onAddTransaction={handleBarAdd}
-            onUpdateTransaction={handleBarUpdate}
-            onDeleteTransaction={handleBarDelete}
-            onAddInventoryItem={handleBarInventoryAdd}
-            onUpdateInventoryItem={handleBarInventoryUpdate}
-            onDeleteInventoryItem={handleBarInventoryDelete}
-          />
+          <BarView />
         );
       default:
         return (

@@ -4,32 +4,46 @@ import { es } from 'date-fns/locale';
 import { Plus, Edit2, Trash2, X, Check } from 'lucide-react';
 import { BarTransaction, BarInventoryItem } from '../types';
 import { ConfirmModal } from './ConfirmModal';
+import { useStore } from '../store/useStore';
 
-let globalBarDate: string | null = null;
+const getSystemDate = () => {
+    try {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Argentina/Buenos_Aires',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(new Date());
+    } catch (e) {
+        return format(new Date(), 'yyyy-MM-dd');
+    }
+};
 
-interface BarContabilidadProps {
-    transactions: BarTransaction[];
-    inventoryItems: BarInventoryItem[];
-    onAdd: (t: BarTransaction) => void;
-    onUpdate: (t: BarTransaction) => void;
-    onDelete: (id: string) => void;
-    onChangeInventoryStock: (id: string, amountChange: number) => void;
-}
+export const BarContabilidad: React.FC = () => {
+    const {
+        barTransactions: transactions,
+        barInventoryItems: inventoryItems,
+        addBarTransaction: onAdd,
+        updateBarTransaction: onUpdate,
+        deleteBarTransaction: onDelete,
+        updateBarInventoryItem
+    } = useStore();
 
-export const BarContabilidad: React.FC<BarContabilidadProps> = ({
-    transactions,
-    inventoryItems,
-    onAdd,
-    onUpdate,
-    onDelete,
-    onChangeInventoryStock,
-}) => {
+    const onChangeInventoryStock = (id: string, amountChange: number) => {
+        const item = inventoryItems.find(i => i.id === id);
+        if (item) {
+            updateBarInventoryItem({
+                ...item,
+                currentStock: Math.max(0, item.currentStock + amountChange)
+            });
+        }
+    };
     const [description, setDescription] = useState('');
     const [quantity, setQuantity] = useState('1');
     const [amount, setAmount] = useState('');
     const [type, setType] = useState<'income' | 'expense'>('income');
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer'>('cash');
-    const [date, setDate] = useState(globalBarDate || format(new Date(), 'yyyy-MM-dd'));
+    const [date, setDate] = useState(() => getSystemDate());
     const [formError, setFormError] = useState<string | null>(null);
     const [successAnim, setSuccessAnim] = useState(false);
 
@@ -57,9 +71,36 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
         ? editingItem.currentStock + (editingTx.quantity || 1)
         : undefined;
 
-    const sortedTransactions = [...transactions].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    const sortedTransactions = [...transactions].sort((a, b) => {
+        const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+        if (dateDiff !== 0) return dateDiff;
+        return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+
+    const parseProductName = (fullName: string) => {
+        const match = fullName.match(/^(\d+(?:\.\d+)*)(?:\s*[\.-]*\s*)(.*)$/);
+        if (match) {
+            return { id: match[1], name: match[2].trim() };
+        }
+        return { id: '', name: fullName.trim() };
+    };
+
+    const sortedInventoryItems = [...inventoryItems].sort((a, b) => {
+        const parsedA = parseProductName(a.name);
+        const parsedB = parseProductName(b.name);
+
+        if (parsedA.id && parsedB.id) {
+            const partsA = parsedA.id.split('.').map(Number);
+            const partsB = parsedB.id.split('.').map(Number);
+
+            for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+                const numA = partsA[i] || 0;
+                const numB = partsB[i] || 0;
+                if (numA !== numB) return numA - numB;
+            }
+        }
+        return a.name.localeCompare(b.name);
+    });
 
     const handleInventoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const id = e.target.value;
@@ -151,7 +192,8 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
         setQuantity('1');
         setAmount('');
         setSelectedInventoryId('');
-        // keep date, type, and paymentMethod the same for convenience
+        setDate(getSystemDate());
+        // keep type, and paymentMethod the same for convenience
 
         setSuccessAnim(true);
         setTimeout(() => setSuccessAnim(false), 1500);
@@ -282,7 +324,6 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
                         value={date}
                         onChange={(e) => {
                             setDate(e.target.value);
-                            globalBarDate = e.target.value;
                         }}
                         className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     />
@@ -296,7 +337,7 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
                             className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         >
                             <option value="">Selecciona un producto...</option>
-                            {inventoryItems.map(item => (
+                            {sortedInventoryItems.map(item => (
                                 <option key={item.id} value={item.id}>{item.name} ({item.currentStock} disp)</option>
                             ))}
                         </select>
@@ -325,7 +366,7 @@ export const BarContabilidad: React.FC<BarContabilidadProps> = ({
                                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                             />
                             <label htmlFor="isFromInventory" className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                                Es un producto del inventario?
+                                ¿Es un producto del inventario?
                             </label>
                         </div>
                     )}

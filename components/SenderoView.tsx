@@ -7,15 +7,12 @@ import { ConfirmModal } from './ConfirmModal';
 
 let globalSenderoDate: string | null = null;
 
-interface SenderoViewProps {
-    records: SenderoRecord[];
-    onAddRecord: (record: SenderoRecord) => void;
-    onDeleteRecord: (id: string) => void;
-}
+import { useStore } from '../store/useStore';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-export const SenderoView: React.FC<SenderoViewProps> = ({ records, onAddRecord, onDeleteRecord }) => {
+export const SenderoView: React.FC = () => {
+    const { senderoRecords: records, addSenderoRecord: onAddRecord, deleteSenderoRecord: onDeleteRecord } = useStore();
     const [empleado, setEmpleado] = useState('');
     const [cantidadPersonas, setCantidadPersonas] = useState('');
     const [precioPorPersona, setPrecioPorPersona] = useState('');
