@@ -5,11 +5,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 // Helper functions to replace missing date-fns exports
-const parseLocalISO = (dateStr: string) => {
-  if (!dateStr) return new Date();
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
-};
+import { parseLocalISO } from '../utils/dateUtils';
 
 const getStartOfDay = (date: Date) => {
   const d = new Date(date);

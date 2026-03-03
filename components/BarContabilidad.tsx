@@ -6,18 +6,7 @@ import { BarTransaction, BarInventoryItem } from '../types';
 import { ConfirmModal } from './ConfirmModal';
 import { useStore } from '../store/useStore';
 
-const getSystemDate = () => {
-    try {
-        return new Intl.DateTimeFormat('en-CA', {
-            timeZone: 'America/Argentina/Buenos_Aires',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        }).format(new Date());
-    } catch (e) {
-        return format(new Date(), 'yyyy-MM-dd');
-    }
-};
+import { getSystemDate, parseLocalISO } from '../utils/dateUtils';
 
 export const BarContabilidad: React.FC = () => {
     const {
@@ -72,7 +61,7 @@ export const BarContabilidad: React.FC = () => {
         : undefined;
 
     const sortedTransactions = [...transactions].sort((a, b) => {
-        const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+        const dateDiff = parseLocalISO(b.date).getTime() - parseLocalISO(a.date).getTime();
         if (dateDiff !== 0) return dateDiff;
         return (b.createdAt || 0) - (a.createdAt || 0);
     });
@@ -520,7 +509,7 @@ export const BarContabilidad: React.FC = () => {
                                     ) : (
                                         // Vista normal
                                         <>
-                                            <td className="py-3 pr-4">{format(new Date(t.date), 'dd/MM/yyyy')}</td>
+                                            <td className="py-3 pr-4">{format(parseLocalISO(t.date), 'dd/MM/yyyy')}</td>
                                             <td className="py-3 font-medium pr-4">
                                                 {t.description}
                                                 <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${t.type === 'income' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'}`}>

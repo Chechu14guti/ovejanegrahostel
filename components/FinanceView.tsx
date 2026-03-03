@@ -24,10 +24,7 @@ const getStartOfMonth = (d: Date) => {
   return newDate;
 };
 
-const parseLocalISO = (s: string) => {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-};
+import { parseLocalISO } from '../utils/dateUtils';
 
 export const FinanceView: React.FC = () => {
   const { bookings, expenses, senderoRecords, barTransactions } = useStore();

@@ -6,6 +6,7 @@ import { BarTransaction } from '../types';
 import { generateBarMonthlyReport } from '../services/pdfService';
 
 import { useStore } from '../store/useStore';
+import { parseLocalISO } from '../utils/dateUtils';
 
 export const BarResumen: React.FC = () => {
     const { barTransactions: transactions } = useStore();
@@ -15,7 +16,7 @@ export const BarResumen: React.FC = () => {
 
     const filteredTransactions = transactions.filter(t => {
         // Use parseLocalISO trick or just string matching to avoid timezone shifts if t.date is YYYY-MM-DD
-        const tDate = new Date(t.date + 'T00:00:00'); // Force local midnight
+        const tDate = parseLocalISO(t.date);
 
         let matchDate = false;
         if (filterType === 'day') {

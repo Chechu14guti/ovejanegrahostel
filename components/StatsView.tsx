@@ -6,10 +6,7 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 import { useStore } from '../store/useStore';
 
-const parseLocalISO = (s: string) => {
-    const [y, m, d] = s.split('-').map(Number);
-    return new Date(y, m - 1, d);
-};
+import { parseLocalISO } from '../utils/dateUtils';
 
 const getStartOfMonth = (d: Date) => {
     const newDate = new Date(d);

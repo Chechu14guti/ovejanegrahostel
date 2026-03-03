@@ -50,10 +50,7 @@ const subtractWeeks = (d: Date, amount: number) => {
   return newDate;
 };
 
-const parseLocalISO = (s: string) => {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-};
+import { parseLocalISO } from '../utils/dateUtils';
 
 type ViewType = 'calendar' | 'finance' | 'expenses' | 'stats' | 'sendero' | 'bar';
 

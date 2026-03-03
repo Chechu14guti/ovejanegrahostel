@@ -5,19 +5,7 @@ import { format, endOfMonth, isWithinInterval, subMonths, addMonths } from 'date
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, Trash2, ShoppingCart } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
-
-const getSystemDate = () => {
-  try {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Argentina/Buenos_Aires',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).format(new Date());
-  } catch (e) {
-    return format(new Date(), 'yyyy-MM-dd');
-  }
-};
+import { getSystemDate, parseLocalISO } from '../utils/dateUtils';
 
 // Helper functions
 const getStartOfMonth = (d: Date) => {
@@ -25,11 +13,6 @@ const getStartOfMonth = (d: Date) => {
   newDate.setDate(1);
   newDate.setHours(0, 0, 0, 0);
   return newDate;
-};
-
-const parseLocalISO = (s: string) => {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
 };
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -54,7 +37,7 @@ export const ExpensesView: React.FC = () => {
       const expenseDate = parseLocalISO(e.date);
       return isWithinInterval(expenseDate, { start, end });
     }).sort((a, b) => {
-      const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+      const dateDiff = parseLocalISO(b.date).getTime() - parseLocalISO(a.date).getTime();
       if (dateDiff !== 0) return dateDiff;
       return (b.createdAt || 0) - (a.createdAt || 0);
     });
