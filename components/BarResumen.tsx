@@ -11,21 +11,33 @@ export const BarResumen: React.FC = () => {
     const { barTransactions: transactions } = useStore();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [filterType, setFilterType] = useState<'day' | 'month' | 'year'>('month');
+    const [paymentFilter, setPaymentFilter] = useState<'all' | 'cash' | 'transfer'>('all');
 
     const filteredTransactions = transactions.filter(t => {
         // Use parseLocalISO trick or just string matching to avoid timezone shifts if t.date is YYYY-MM-DD
         const tDate = new Date(t.date + 'T00:00:00'); // Force local midnight
 
+        let matchDate = false;
         if (filterType === 'day') {
-            return tDate.getDate() === selectedDate.getDate() &&
+            matchDate = tDate.getDate() === selectedDate.getDate() &&
                 tDate.getMonth() === selectedDate.getMonth() &&
                 tDate.getFullYear() === selectedDate.getFullYear();
         } else if (filterType === 'month') {
-            return tDate.getMonth() === selectedDate.getMonth() &&
+            matchDate = tDate.getMonth() === selectedDate.getMonth() &&
                 tDate.getFullYear() === selectedDate.getFullYear();
         } else { // year
-            return tDate.getFullYear() === selectedDate.getFullYear();
+            matchDate = tDate.getFullYear() === selectedDate.getFullYear();
         }
+
+        if (!matchDate) return false;
+
+        if (paymentFilter !== 'all') {
+            // Include backward compatibility if some old transactions don't have a paymentMethod 
+            // but the user filters by cash/transfer, we assume they only want those that explicitly match.
+            return t.paymentMethod === paymentFilter;
+        }
+
+        return true;
     });
 
     const totalIncome = filteredTransactions
@@ -52,13 +64,13 @@ export const BarResumen: React.FC = () => {
 
     const handleDownloadPDF = () => {
         // PDF defaults to "Monthly" logic currently, but passing filtered works depending on pdfService.
-        generateBarMonthlyReport(filteredTransactions, selectedDate, filterType);
+        generateBarMonthlyReport(filteredTransactions, selectedDate, filterType, paymentFilter);
     };
 
     return (
         <div className="space-y-6">
             {/* Filter Type Toggle */}
-            <div className="flex justify-center mb-6">
+            <div className="flex flex-col md:flex-row gap-4 justify-center mb-6">
                 <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl inline-flex shadow-sm border border-gray-200 dark:border-gray-700">
                     <button
                         onClick={() => setFilterType('day')}
@@ -77,6 +89,27 @@ export const BarResumen: React.FC = () => {
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${filterType === 'year' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
                     >
                         <CalendarCheck className="w-4 h-4" /> Año
+                    </button>
+                </div>
+
+                <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl inline-flex shadow-sm border border-gray-200 dark:border-gray-700">
+                    <button
+                        onClick={() => setPaymentFilter('all')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${paymentFilter === 'all' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                    >
+                        Todos
+                    </button>
+                    <button
+                        onClick={() => setPaymentFilter('cash')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${paymentFilter === 'cash' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                    >
+                        Efectivo
+                    </button>
+                    <button
+                        onClick={() => setPaymentFilter('transfer')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${paymentFilter === 'transfer' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                    >
+                        Transferencia
                     </button>
                 </div>
             </div>

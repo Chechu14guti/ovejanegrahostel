@@ -248,7 +248,8 @@ export const generateMonthlyReport = (
 export const generateBarMonthlyReport = (
   transactions: BarTransaction[],
   date: Date,
-  filterType: 'day' | 'month' | 'year' = 'month'
+  filterType: 'day' | 'month' | 'year' = 'month',
+  paymentFilter: 'all' | 'cash' | 'transfer' = 'all'
 ) => {
   const doc = new jsPDF();
 
@@ -268,7 +269,10 @@ export const generateBarMonthlyReport = (
 
   // Título
   doc.setFontSize(18);
-  doc.text(`Reporte de Bar - ${periodName}`, 14, 22);
+  let titleFilterStr = '';
+  if (paymentFilter === 'cash') titleFilterStr = ' (Efectivo)';
+  if (paymentFilter === 'transfer') titleFilterStr = ' (Transferencia)';
+  doc.text(`Reporte de Bar - ${periodName}${titleFilterStr}`, 14, 22);
 
   // Fecha de generación
   doc.setFontSize(11);
@@ -295,19 +299,20 @@ export const generateBarMonthlyReport = (
         format(new Date(t.date), 'dd/MM'),
         t.description,
         t.type === 'income' ? 'Ingreso' : 'Gasto',
+        t.paymentMethod === 'transfer' ? 'Transf.' : (t.paymentMethod === 'cash' ? 'Efectivo' : '-'),
         `$${t.amount.toFixed(2)}`
       ]);
 
     // Apply color to amounts based on type (green for income, red for expense)
     applyAutoTable(doc, {
-      head: [['Fecha', 'Concepto', 'Tipo', 'Monto']],
+      head: [['Fecha', 'Concepto', 'Tipo', 'Método', 'Monto']],
       body: tableData,
       startY: 40,
       theme: 'grid',
       headStyles: { fillColor: [243, 156, 18] }, // Naranja para el bar
       styles: { fontSize: 9 },
       didParseCell: function (data: any) {
-        if (data.section === 'body' && data.column.index === 3) {
+        if (data.section === 'body' && data.column.index === 4) {
           if (data.row.raw[2] === 'Ingreso') {
             data.cell.styles.textColor = [46, 204, 113]; // Green
           } else {
